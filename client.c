@@ -136,7 +136,6 @@ int main(int argc, char *argv[]) {
         break;
       }
       // letztes Zeichen \n
-//      line[(n-1)] = TERM_SYMBOL;
       strtok(line, "\n");
       send = line;
     }

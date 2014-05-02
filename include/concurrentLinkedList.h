@@ -22,30 +22,49 @@
 #ifndef _CONCURRENT_LINKED_LIST
 #define _CONCURRENT_LINKED_LIST
 
-#define ELEMENT_RETURNED 0
-#define NO_ELEMENT_RETURNED 1
-#define USE_SUCCESS 0
-#define USE_FAILURE  1
+#include <pthread.h>
+#include <stdlib.h>
 
-// Linked List aus Threads
+// Linked List of threads
 typedef struct ConcurrentListElement {
+  size_t payload_size;
   void *payload;
-  pthread_mutex_t *usageMutex;
+  pthread_mutex_t usageMutex;
+  char *ID;
   struct ConcurrentListElement *nextEntry;
-  struct ConcurrentListElement *lastEntry;
-  int deleted;
 } ConcurrentListElement;
 
-typedef struct ConcurrentLinkedList{
-  int numEntries;
-  ThreadListEntry **firstElement;
-  ThreadListEntry **lastElement;
-  size_t numElements;
-  pthread_mutex_t *mutex;
+typedef struct ConcurrentLinkedList {
+  pthread_mutex_t firstElementMutex;
+  ConcurrentListElement *firstElement;
 } ConcurrentLinkedList;
 
-void appendListElement(ConcurrentLinkedList list, void *payload);
-int getFirstElement(ConcurrentLinkedList list, void *payload);
-void removeFirstElement(ConcurrentLinkedList list);
+/**
+ * Returns a new List
+ */
+ConcurrentLinkedList *newList() ;
 
+/*
+ * Removes all elements that are currently in the list
+ */
+void removeAllElements(ConcurrentLinkedList *list);
+
+/*
+ * Adds an element to the end of the list
+ */
+void appendListElement(ConcurrentLinkedList *list, void **payload, 
+                       size_t payload_size, char* ID) ;
+
+/*
+ * Returns a shallow copy of the first element!
+ * ATTENTION: This will not secure the integrity of the target of pointers
+ *            in the payload of the element!
+ * The copy has to be freed by the calling thread
+ */
+size_t getFirstListElement(ConcurrentLinkedList *list, void **payload);
+
+/**
+ * Removes the first element of the List - if existing
+ */
+void removeFirstListElement(ConcurrentLinkedList *list);
 #endif

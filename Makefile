@@ -10,7 +10,10 @@ CLIENT_OUT=client.out
 all: uebung client 
 
 clean:
-	rm lib/*.a lib/*.o $(MYFILE) client.o
+	rm lib/*.a lib/*.o $(CLIENT_OUT) $(SERVER_OUT) test.out 
+
+test: $(MYSOURCE) lib/libtermpaper.a include/termPaperLib.h
+	gcc $(CFLAGS) test.c $(LIBS) -o test.out
 
 uebung: $(MYSOURCE) lib/libitsky.a lib/libtermpaper.a include/termPaperLib.h
 	gcc $(CFLAGS) $(SERVER_FILE) $(LIBS) -o $(SERVER_OUT)
@@ -26,11 +29,8 @@ lib/termPaperLib.o: lib/termPaperLib.c
 lib/concurrentLinkedList.o: lib/concurrentLinkedList.c lib/termPaperLib.o
 	gcc -c $(CFLAGS) lib/concurrentLinkedList.c -o lib/concurrentLinkedList.o
 
-lib/libtermpaper.a: lib/termPaperLib.o 
-	ar crs lib/libtermpaper.a lib/termPaperLib.o 
-
-#lib/termPaperLib.a: lib/termPaperLib.o lib/concurrentLinkedList.o
-#	ar crs lib/termPaperLib.a lib/termPaperLib.o lib/concurrentLinkedList.o 
+lib/libtermpaper.a: lib/termPaperLib.o lib/concurrentLinkedList.o
+	ar crs lib/libtermpaper.a lib/termPaperLib.o lib/concurrentLinkedList.o 
 
 # Libs aus der Hausaufgabe
 

@@ -22,34 +22,154 @@
  */
 
 #include <concurrentLinkedList.h> 
+#include <termPaperLib.h>
+
+#include <string.h>
+
+ConcurrentLinkedList *newList() {
+  ConcurrentLinkedList *list = malloc(sizeof(ConcurrentLinkedList));
+  list->firstElement = NULL;
+  pthread_mutex_t mutex = PTHREAD_MUTEX_INITIALIZER;
+  list->firstElementMutex = mutex;
+  return list;
+}
 
 /*
  * Indicate interrest for an element 
- * May lead to problems when used on deleted elements
  */
-int useElement(ConcurrentListElement element) {
-  if (element.deleted) {
-    // ... it is just luck, that the element is not already cleaned up 
-    // exit fast
-    return USE_FAILURE;
-    pthread_mutex_lock(threadList->mutex);
-    handle_thread_error(retcode, "lock mutex", THREAD_EXIT);
+void useElement(ConcurrentListElement *element) {
+  int retcode = pthread_mutex_lock(&element->usageMutex);
+  handle_thread_error(retcode, "lock emement mutex", THREAD_EXIT);
+}
+
+/*
+ * Return an element 
+ */
+void returnElement(ConcurrentListElement *element) {
+  int retcode = pthread_mutex_unlock(&element->usageMutex);
+  handle_thread_error(retcode, "unlock emement mutex", THREAD_EXIT);
+}
+
+void useFirstElement(ConcurrentLinkedList *list) {
+
+  // As long as the list exists this lock will never end in nirvana
+  int retcode = pthread_mutex_lock(&list->firstElementMutex);
+  handle_thread_error(retcode, "lock first elements mutex", THREAD_EXIT);
+
+  ConcurrentListElement *element = list->firstElement;
+}
+
+void returnFirstElement(ConcurrentLinkedList *list) {
+
+  // As long as the list exists this lock will never end in nirvana
+  int retcode = pthread_mutex_unlock(&list->firstElementMutex);
+  handle_thread_error(retcode, "unlock first elements mutex", THREAD_EXIT);
+}
+
+ConcurrentListElement *removeElement(ConcurrentListElement *element) {
+  useElement(element);
+  ConcurrentListElement *next = element->nextEntry;
+
+  // no other thread can access the elemnt right now since the predecessor
+  // is locked
+  returnElement(element);
+  // Pointer and real content
+  log_debug("Remove payload: %p", element->payload);
+  log_debug("Remove element: %p", element);
+
+  free(element->payload);
+  free(element);
+  return next;
+}
+
+void removeAllElements(ConcurrentLinkedList *list) {
+  useFirstElement(list); 
+  ConcurrentListElement *first = list->firstElement;
+
+  while(first != NULL ) {
+    list->firstElement = removeElement(first);
+    first = list->firstElement;
+  }
+  returnFirstElement(list);
+}
+
+void removeFirstListElement(ConcurrentLinkedList *list) {
+  useFirstElement(list); 
+  ConcurrentListElement *first = list->firstElement;
+
+  if(first != NULL ) {
+    list->firstElement = removeElement(first);
+    first = list->firstElement;
+  }
+  returnFirstElement(list);
+}
+
+void appendListElement(ConcurrentLinkedList *list, void **payload, 
+    size_t payload_size, char* ID) {
+  ConcurrentListElement *new = malloc(sizeof(ConcurrentListElement));
+  new->payload = malloc(payload_size);
+  memcpy(new->payload, *payload, payload_size);
+
+  log_debug("Append payload: %p", *payload);
+  log_debug("Append payload size: %d", payload_size);
+  log_debug("Append element: %p", new);
+  log_debug("Append element payload: %p", new->payload);
+
+  pthread_mutex_t mutex = PTHREAD_MUTEX_INITIALIZER;
+  new->usageMutex = mutex; 
+  new->nextEntry = NULL;
+  new->ID=ID; 
+  new->payload_size=payload_size;
+
+  useFirstElement(list); 
+  ConcurrentListElement *next = list->firstElement;
+  ConcurrentListElement *current;
+  if(next != NULL ) {
+
+    useElement(next);
+    returnFirstElement(list); 
+    current = next;
+    next = current->nextEntry;
+    while(next != NULL ) {
+      useElement(next);
+      returnElement(current);
+
+      current = next;
+      next = current->nextEntry;
+    }
+    current->nextEntry = new;
+    returnElement(current);
+  } else {
+    list->firstElement = new;   
+    returnFirstElement(list); 
   }
 }
 
-int returnElement(ConcurrentListElement) {
+size_t getFirstListElement(ConcurrentLinkedList *list, void **payload) {
+  useFirstElement(list); 
+  ConcurrentListElement *first = list->firstElement;
+  size_t payload_size;
 
-}
+  if(first != NULL) {
 
-void appendListElement(ConcurrentLinkedList list, void *payload){
+    useElement(first);
+    returnFirstElement(list);
+    payload_size = first->payload_size;
 
-}
+    *payload = malloc(payload_size);
+    memcpy(*payload, first->payload, payload_size);
 
-int getFirstElement(ConcurrentLinkedList list, void *payload) {
-  if(list.numElements < 1) 
+    log_debug("Original payload: %p", first->payload);
+    log_debug("  Return payload: %p", *payload);
+    log_debug("Payload size: %d", payload_size);
+
+    returnElement(first);
+
+  } else {
+    returnFirstElement(list);
+    payload_size = 0; 
+    *payload = NULL; 
   }
-}
 
-void removeFirstElement(ConcurrentLinkedList list) {
-
+  return payload_size;
 }
