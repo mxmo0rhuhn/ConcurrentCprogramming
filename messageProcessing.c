@@ -2,9 +2,7 @@
 /* 
  * This file is part of the concurrent programming in C term paper
  *
- * It provides library functions for common tasks and is based on teaching 
- * material by Karl Brodowsky that was used for the system programming course 
- * at Zurich University of Applied Sciences 2014
+ * It handles messages from the client and starts the requested processing
  * Copyright (C) 2014 Max Schrimpf
  *
  * The file is free software: You can redistribute it and/or modify
@@ -22,39 +20,136 @@
  * 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
  */
 
-// Shared Libs aus der Semesterarbeit
 #include <termPaperLib.h>
 #include <concurrentLinkedList.h>
 
-// stdout 
-#include <stdio.h>
-//huebsche file fehler
-#include <errno.h>
-// string stuff
 #include <string.h>
-// threads
-#include <pthread.h>
-// exit
-#include <stdlib.h>
-// read 
-#include <unistd.h>
-// sockets & co
-#include <sys/socket.h>
-// addrtype 
-#include <netdb.h>
-// inet_ntoa
-#include <arpa/inet.h>
+
+// Requests
+#define READ   "READ"
+#define LIST   "LIST"
+#define CREATE "CREATE"
+#define UPDATE "UPDATE"
+#define DELETE "DELETE"
+
+// Responses
+// Errors
+#define FILEEXISTS "FILEEXISTS\n"
+#define NOSUCHFILE "NOSUCHFILE\n"
+#define COMMAND_UNKNOWN "COMMAND_UNKNOWN\n"
+
+// positive responses
+#define ACK "ACK\n"
+#define FILECREATED "FILECREATED\n"
+#define FILECONTENT "FILECONTENT\n"
+#define DELETED "DELETED\n"
+#define UPDATED "UPDATED\n"
 
 
+/*
+ * List all files
+ * Possible response:
+ *  
+ *      ACK NUM_FILES\n
+ *      FILENAME\n
+ */
+char *list_files() {
+  log_info("Performing LIST");
 
-  if (received_msg_size == CMD_LEN) {
-    if (strncmp(*buffer_ptr, CMD, CMD_LEN) != 0) {
-      close(payload->socket);    
-      handle_thread_error(-1, "CMD not known \n", THREAD_EXIT);
-    }
-    // wenn es hier vorbei kommt ist alles gut
-    log_info("Thread %ld: I know what I shall do", threadID);
-  } else {
-    close(payload->socket);    
-    handle_thread_error(-1, "CMD not known - length not known\n", THREAD_EXIT);
+}
+
+/*
+ * Create a new file
+ * Possible response:
+ *  
+ *      FILEEXISTS\n
+ *  or
+ *      FILECREATED\n
+ */
+char *create_file(char *filename, int length, char *content) {
+  log_info("Performing CREATE %s", filename);
+
+}
+
+/*
+ * Read the content of a file
+ * Possible response:
+ *  
+ *      NOSUCHFILE\n
+ *  or
+ *      FILECONTENT FILENAME LENGTH\n
+ *      CONTENT
+ */
+char *read_file(char *filename) {
+  log_info("Performing READ %s", filename);
+
+}
+
+/*
+ * Change the content of a file
+ * Possible response:
+ *
+ *      NOSUCHFILE\n
+ *  or
+ *      UPDATED\n
+ */
+char *update_file(char *filename, int length, char *content) {
+  log_info("Performing UPDATE %s", filename);
+
+}
+
+/*
+ * Delete a file
+ * Possible response:
+ *
+ *      NOSUCHFILE\n
+ *  or
+ *      DELETED\n
+ */
+char *delete_file(char *filename) {
+  log_info("Performing DELETE %s", filename);
+}
+
+char *handle_message(size_t msg_size, char *msg) {
+  
+  if( msg_size < 5) {
+    log_error( "Command unknown: '%s'", msg);
+    return COMMAND_UNKNOWN;
   }
+
+      // TODO UPDATE und CREATE haben mehrere Lines
+  // remove tailing \n and get first token
+  char *token = strtok(msg, "\n");
+  token = strtok(token, " ");
+
+  if( token == NULL) {
+    log_error( "Command unknown: '%s'", msg);
+    return COMMAND_UNKNOWN;
+  }
+
+  size_t len = strlen(token);
+  if (len == 4) {
+    if (strncmp(token, LIST, 4) == 0) {
+      return list_files();
+    } else if (strncmp(token, READ, 4) == 0) {
+
+      // TODO PARAMETER
+      token = strtok(NULL, " ");
+      if( token == NULL) {
+        log_error( "Parameter unknown: '%s'", msg);
+        return COMMAND_UNKNOWN;
+      }
+
+      return read_file();
+    }
+  } else if (len == 6) {
+    if (strncmp(token, CREATE , 6) == 0) {
+    } else if (strncmp(token, UPDATE, 6) == 0) {
+    } else if (strncmp(token, DELETE, 6) == 0) {
+    }
+  } 
+
+  // save  default
+  log_error( "Command unknown: '%s'", msg);
+  return COMMAND_UNKNOWN;
+}
