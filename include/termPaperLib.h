@@ -4,7 +4,6 @@
  * It provides the header for a library of common functions and is based on 
  * teaching material by Karl Brodowsky that was used for the system 
  * programming course at Zurich University of Applied Sciences 2014
- * Copyright (C) 2014 Max Schrimpf
  *
  * The file is free software: You can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -30,17 +29,8 @@
 #define TRUE 1
 #define FALSE 0
 
-#define MAX_BLOCK_COUNT 100000
-#define MAX_BLOCK_SIZE  100000
-
-struct string_array {
-  char **strings;
-  int len;
-};
-
 enum exit_type { PROCESS_EXIT, THREAD_EXIT, NO_EXIT };
 
-enum file_type { NOT_EXISTENT, DIRECTORY, REGULAR_FILE, OTHER };
 /*
  * Logging functions for messages
  */
@@ -53,33 +43,36 @@ void log_error(const char *msg, ...) ;
  */
 int is_help_requested(int argc, char *argv[]);
 
-struct timespec get_future(time_t sec, long nsec);
-
-void exit_by_type(enum exit_type et);
-
+/* 
+ * helper function for thread error handling
+ */
 void handle_thread_error(int retcode, const char *msg, enum exit_type et);
 
-/* helper function for dealing with errors */
+/* 
+ * helper function for error handling
+ */
 void handle_error(long return_code, const char *msg, enum exit_type et);
 
-void handle_error_myerrno(long return_code, int myerrno, const char *msg, enum exit_type et);
-
-void handle_ptr_error(void *ptr, const char *msg, enum exit_type et);
-
-void die_with_error(char *error_message);
-
-int open_retry_mode(char *file, int flags, mode_t mode, enum exit_type et);
-
-int open_retry(char *file, int flags, enum exit_type et);
-
-enum file_type check_file(const char *file_or_dir_name);
-
-/* creates a file if it does not exist */
+/* 
+ * creates a file if it does not exist 
+ */
 int create_if_missing(const char *pathname, mode_t mode);
 
-int is_string_char(char c);
+/* 
+ * the caller has to free the buffer, unless ulen == 0 
+ */
+size_t read_and_store_string(int client_socket, char **result) ;
 
-/* read the contents of a file and convert it to an array of strings containing the readable characters interpreted as 8-bit-charset */
-struct string_array read_to_array(int fd);
+/* 
+ * transmit a string over a socket or pipe connnection
+ * if len is given it is assumed to be the lenght of the string
+ * if it is -1, the length is found out with strlen()
+ * The length of string is transmitted first as 4 byte unsigned integer,
+ * followed by the string itself.
+ * @param client_socket  a socket or pipe.  Could be a file also.
+ * @param str string to be transmitted
+ * @param len length of string to be transmitted
+ */
+void write_string(int client_socket, char *str, size_t len) ;
 
 #endif

@@ -10,7 +10,7 @@ void placeInt(int input) {
 
   // Input only has local scope!
   int *poin = &input;
-  appendListElement(threadList, &poin, sizeof(int), "NoName");
+  appendListElement(threadList, (void *) &poin, sizeof(int), "NoName");
 }
 
 void retriveInt(){

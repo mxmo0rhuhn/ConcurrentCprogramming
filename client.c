@@ -1,36 +1,32 @@
-/*
- * Uebung 12 - Systemprogrammierung
- * Max Schrimpf 
- * Hausaufgabe 7
+/* 
+ * This file is part of the concurrent programming in C term paper
  *
- * Client:
- * - Einfache Moeglichkeit Strings ueber TCP IP an einen Server zu senden
+ * It provides a client to access the server and perform requests
+ * Copyright (C) 2014 Max Schrimpf
  *
- * Basiert auf den im GitHub angegebenen Beispielen
+ * The file is free software: You can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation, either version 2 of the License, or
+ * (at your option) any later version.
+ *
+ * The file is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with the project. if not, write to the Free Software Foundation, Inc.
+ * 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
  */
 
-/* for sockaddr_in and inet_addr() */
 #include <arpa/inet.h>  
-#include <errno.h>
-#include <netinet/in.h>
-#include <netinet/tcp.h>
 #include <stdio.h>
-/* for printf() and fprintf() and ... */
-#include <stdio.h>      
-/* for atoi() and exit() and ... */
 #include <stdlib.h>     
-/* for memset() and ... */
 #include <string.h>     
-/* for socket(), connect(), send(), and recv() */
-#include <sys/socket.h> 
-#include <sys/types.h>
-/* for close() */
 #include <unistd.h>     
 
 #include <termPaperLib.h>
 #include <transmission-protocols.h>
-
-char TERM_SYMBOL='\000';
 
 void usage(const char *argv0, const char *msg) {
   if (msg != NULL && strlen(msg) > 0) {
@@ -47,32 +43,23 @@ void usage(const char *argv0, const char *msg) {
 int main(int argc, char *argv[]) {
 
   int retcode;
-
   if (is_help_requested(argc, argv)) {
     usage(argv[0], "");
   }
 
-  /* Test for correct number of arguments */
   if (argc < 2 || argc > 6) {    
     usage(argv[0], "wrong number of arguments please provide an IP at least");
   }
 
-  /* Socket descriptor */
   int sock;                        
-  /* Square server address */
   struct sockaddr_in server_address; 
-  /* Square server port */
-  unsigned short server_port;     
-  /* Server IP address (dotted quad) */
-  char *server_ip;                    
-  /* First arg: server IP address (dotted quad) */
-  server_ip = argv[1];             
+  unsigned short server_port = 7000;  
+  char *server_ip = argv[1];             
   int interactive = TRUE; 
+  int firstRun = TRUE;
   char *cmd;
   int cmdLen;
 
-  // Skip program name & IP 
-  server_port = 7000;  
   int i;
   for (i = 2; i < argc; i++)  {
     if (strcmp(argv[i], "-p") == 0)  {
@@ -97,25 +84,18 @@ int main(int argc, char *argv[]) {
     }
   }
 
-  int firstRun = TRUE;
   while (firstRun || interactive ) {
-    /* Create a reliable, stream socket using TCP */
 
     sock = socket(PF_INET, SOCK_STREAM, IPPROTO_TCP);
     handle_error(sock, "socket() failed", PROCESS_EXIT);
 
-    /* Construct the server address structure */
-
-    /* Zero out structure */
     memset(&server_address, 0, sizeof(server_address));     
-    /* Internet address family */
     server_address.sin_family      = AF_INET;             
-    /* Server IP address */
     server_address.sin_addr.s_addr = inet_addr(server_ip);   
-    /* Server port: htons host to network byte order */
     server_address.sin_port        = htons(server_port); 
 
-    retcode = connect(sock, (struct sockaddr *) &server_address, sizeof(server_address));
+    retcode = connect(sock, (struct sockaddr *) &server_address, 
+                             sizeof(server_address));
     handle_error(retcode, "connect() failed\n", PROCESS_EXIT);
 
     char *send;
@@ -135,7 +115,7 @@ int main(int argc, char *argv[]) {
         printf("terminated by user\n");
         break;
       }
-      // letztes Zeichen \n
+      
       strtok(line, "\n");
       send = line;
     }
@@ -143,7 +123,7 @@ int main(int argc, char *argv[]) {
     write_string(sock, send, -1);
 
     while(TRUE) {
-      char *buffer_ptr[1];
+      char *buffer_ptr[0];
       size_t received_msg_size = read_and_store_string(sock, buffer_ptr);
       handle_error(received_msg_size, "recive failed", PROCESS_EXIT);
 
