@@ -25,12 +25,19 @@
 
 #include <string.h>
 
-// Requests
-#define READ   "READ"
-#define LIST   "LIST"
-#define CREATE "CREATE"
-#define UPDATE "UPDATE"
-#define DELETE "DELETE"
+// max. size for FILENAME and CONTENT
+#define MAX_BUFLEN 1024
+// number of chars for the decimal representation of the MAX_BUFLEN
+#define SIZE_MAX_BUFLEN 4
+
+struct protocoll {
+  int buflen;
+  char length[SIZE_MAX_BUFLEN+1];
+  char filename[MAX_BUFLEN+1];
+  char content[MAX_BUFLEN+1];
+}
+
+%%write data;
 
 // Responses
 // Errors
@@ -44,7 +51,6 @@
 #define FILECONTENT "FILECONTENT\n"
 #define DELETED "DELETED\n"
 #define UPDATED "UPDATED\n"
-
 
 /*
  * List all files
@@ -93,7 +99,7 @@ char *read_file(char *filename) {
  *  or
  *      UPDATED\n
  */
-char *update_file(char *filename, int length, char *content) {
+char *update_file(char *filename, char *length, char *content) {
   log_info("Performing UPDATE %s", filename);
 
 }
@@ -111,62 +117,79 @@ char *delete_file(char *filename) {
 }
 
 char *handle_message(size_t msg_size, char *msg) {
-  
-  // With tailing \n
-  if( msg_size < 5) {
-    log_error( "Command unknown: '%s'", msg);
-    return COMMAND_UNKNOWN;
-  }
 
-  char *lines = malloc(msg_size);
-  char *tokens = malloc(msg_size);
-  strncpy(lines, msg, msg_size);
-  strncpy(tokens, msg, msg_size);
+  char *p = msg;
+  char *pe = p + strlen(msg);
 
-  char *line = strtok(lines, "\n");
-  size_t line_len = strlen(line);
-  
-  if( token == NULL) {
-    log_error( "Command unknown: '%s'", msg);
-    return COMMAND_UNKNOWN;
-  }
+  %%{
+# Machine definition
+    machine protocoll;
+# get the struct
+    access fsm->;
 
-  if (line_len == 4 && strncmp(token, LIST, 4) == 0) {
-// LIST
-    return list_files();
-  }
-
-  char *tokens = strtok(token, " ");
-  size_t token_len = strlen(token);
-
-  if (token_len == 4) {
-    if (strncmp(token, READ, 4) == 0) {
-// READ
-
-      // TODO PARAMETER
-      token = strtok(NULL, " ");
-      if( token == NULL) {
-        log_error( "Parameter unknown: '%s'", msg);
-        return COMMAND_UNKNOWN;
+# Append the current character to the content buffer
+    action append_content {
+      if ( fsm->buflen < MAX_BUFLEN ) {
+        fsm->content[fsm->buflen++] = fc;
       }
-
-
-      return read_file();
-    }
-  } else if (token_len == 6) {
-    if (strncmp(token, CREATE , 6) == 0) {
-// CREATE
-    } else if (strncmp(token, UPDATE, 6) == 0) {
-// UPDATE
-    } else if (strncmp(token, DELETE, 6) == 0) {
-// DELETE
     }
 
-    free(lines);
-    free(tokens);
-  } 
+# Append the current character to the filename buffer
+    action append_filename {
+      if ( fsm->buflen < MAX_BUFLEN ) {
+        fsm->filename[fsm->buflen++] = fc;
+      }
+    }
 
+# Append the current character to the length buffer
+    action append_length {
+      if ( fsm->buflen < MAX_BUFLEN ) {
+        fsm->length[fsm->buflen++] = fc;
+      }
+    }
+
+# Terminate a buffer.
+    action term {
+      if ( fsm->buflen < BUFLEN ) {
+        fsm->buffer[fsm->buflen++] = '\000';
+      }
+    }
+
+# prepare for a new buffer
+    action init { fsm->buflen = 0; }
+
+# Helpers that collect strings
+    length = [digit]+ >init_len $append_length %term;
+    filename = [alnum]+ >init_len $append_filename %term;
+    content = [alnum]+ >init_len $append_content %term;
+
+# action definitions
+    action list { return list_files(); }
+    action read { return read_file(fsm->filename); }
+    action delete { return delete_file(fsm->filename); }
+    action update { return update_file(fsm->filename, fsm->length, fsm->content); }
+    action create { return create_file(fsm->filename, fsm->length, fsm->content); }
+
+# Machine definition
+    list = 'LIST\n' , @list;
+    read = 'READ ' , filename , '\n' , @read;
+    delete = 'DELETE ' , filename , '\n' 0 @delete;
+    update = 'UPDATE ' , filename , ' ' , length , '\n , content , '\n' 0 @update;
+    create = 'CREATE ' , filename , ' ' , length , '\n , content , '\n' 0 @create;
+
+main := ( 
+          list | 
+          read | 
+          update |
+          delete |
+          create
+        );
+
+      write init;
+      write exec;
+  }%%
   // save  default
   log_error( "Command unknown: '%s'", msg);
   return COMMAND_UNKNOWN;
 }
+
