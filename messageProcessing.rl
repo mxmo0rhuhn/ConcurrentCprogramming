@@ -37,7 +37,11 @@ struct protocoll {
   char content[MAX_BUFLEN+1];
 }
 
-%%write data;
+%%{
+# Machine definition
+  machine protocoll;
+  write data;
+}%%
 
 // Responses
 // Errors
@@ -159,9 +163,9 @@ char *handle_message(size_t msg_size, char *msg) {
     action init { fsm->buflen = 0; }
 
 # Helpers that collect strings
-    length = [digit]+ >init_len $append_length %term;
-    filename = [alnum]+ >init_len $append_filename %term;
-    content = [alnum]+ >init_len $append_content %term;
+    length = [digit]+ >init $append_length %term;
+    filename = [alnum]+ >init $append_filename %term;
+    content = [alnum]+ >init $append_content %term;
 
 # action definitions
     action list { return list_files(); }
@@ -171,11 +175,11 @@ char *handle_message(size_t msg_size, char *msg) {
     action create { return create_file(fsm->filename, fsm->length, fsm->content); }
 
 # Machine definition
-    list = 'LIST\n' , @list;
-    read = 'READ ' , filename , '\n' , @read;
-    delete = 'DELETE ' , filename , '\n' 0 @delete;
-    update = 'UPDATE ' , filename , ' ' , length , '\n , content , '\n' 0 @update;
-    create = 'CREATE ' , filename , ' ' , length , '\n , content , '\n' 0 @create;
+    list = 'LIST\n' 0 @list;
+    read = 'READ ' 0 filename 0 '\n' 0 @read;
+    delete = 'DELETE ' 0 filename 0 '\n' 0 @delete;
+    update = 'UPDATE ' 0 filename 0 ' ' 0 length 0 '\n' 0 content 0 '\n' 0 @update;
+    create = 'CREATE ' 0 filename 0 ' ' 0 length 0 '\n' 0 content 0 '\n' 0 @create;
 
 main := ( 
           list | 
