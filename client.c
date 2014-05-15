@@ -102,10 +102,25 @@ int main(int argc, char *argv[]) {
     if (interactive  != TRUE){
       send = cmd;
     } else {
-      char line[40];
+      char line[2048];
+      char c;
+      char lastc = '\n';
+      int i = 0;
+
       printf("CMD=");
       fflush(stdout);
-      fgets(line, 40, stdin);
+
+      while (EOF!= ( c = getc(stdin))) {
+
+        if (lastc == '\n' && c == '\n') {
+          break;
+        }
+        lastc = c;
+        line[i]  = c;
+        i++;
+      }
+      line[i]  = '\000';
+
       int n = strlen(line);
 
       if (n == 0) {
@@ -118,7 +133,7 @@ int main(int argc, char *argv[]) {
       
       send = line;
     }
-    printf("Sendling: '%s'\n", send);
+    log_debug("Sendling: '%s'\n", send);
     write_string(sock, send, -1);
 
     char *buffer_ptr[0];
