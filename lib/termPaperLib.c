@@ -147,11 +147,12 @@ int is_help_requested(int argc, char *argv[]) {
 size_t read_and_store_string(int client_socket, char **result) {
   uint32_t ulen_net = 0;
   size_t bytes_received = recv(client_socket, &ulen_net, sizeof(ulen_net), 0);
-  handle_error(bytes_received, "Recive msg from client", PROCESS_EXIT);
+  handle_error(bytes_received, "Recive msg from client", THREAD_EXIT);
 
   if (bytes_received != sizeof(ulen_net)) {
+    handle_error(bytes_received, "Recive msg from client", THREAD_EXIT);
     log_error("recv() failed or connection closed prematurely");
-    return 0;
+    exit_by_type(THREAD_EXIT);
   }
 
   uint32_t ulen = ntohl(ulen_net);
@@ -168,7 +169,7 @@ size_t read_and_store_string(int client_socket, char **result) {
     bytes_received = read(client_socket, ptr, rest_len);
     if (bytes_received <= 0) {
       log_error("recv() failed or connection closed prematurely");
-      exit(1);
+      exit_by_type(THREAD_EXIT);
     }
     rest_len -= bytes_received;
     ptr += bytes_received;
@@ -188,7 +189,7 @@ void write_string(int client_socket, char *str, size_t len) {
   uint32_t ulen_net = htonl(ulen);
 
   int retcode = write(client_socket, &ulen_net, sizeof(ulen_net));
-  handle_error(retcode, "Send message to client", PROCESS_EXIT);
+  handle_error(retcode, "Send message to client", THREAD_EXIT);
 
   char *ptr = str;
   size_t rest_len = len;

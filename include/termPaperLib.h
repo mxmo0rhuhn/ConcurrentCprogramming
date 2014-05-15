@@ -74,5 +74,4 @@ size_t read_and_store_string(int client_socket, char **result) ;
  * @param len length of string to be transmitted
  */
 void write_string(int client_socket, char *str, size_t len) ;
-
 #endif

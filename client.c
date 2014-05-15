@@ -116,25 +116,20 @@ int main(int argc, char *argv[]) {
         break;
       }
       
-      strtok(line, "\n");
       send = line;
     }
     printf("Sendling: '%s'\n", send);
     write_string(sock, send, -1);
 
-    while(TRUE) {
-      char *buffer_ptr[0];
-      size_t received_msg_size = read_and_store_string(sock, buffer_ptr);
-      handle_error(received_msg_size, "recive failed", PROCESS_EXIT);
+    char *buffer_ptr[0];
 
-      if (received_msg_size == 0) {
-        printf("terminated by server\n");
-        break;
-      }
+    // Receive command from server 
+    size_t received_msg_size = read_and_store_string(sock, buffer_ptr);
+    handle_error(received_msg_size, "recive failed", THREAD_EXIT);
 
-      printf("Response=%s \n", *buffer_ptr);
-      free(*buffer_ptr);
-    }
+    printf("Response=%s \n", *buffer_ptr);
+    free(*buffer_ptr);
+
     close(sock);
     firstRun = FALSE;
   }

@@ -27,6 +27,7 @@
 
 #include <termPaperLib.h>
 #include <concurrentLinkedList.h>
+#include <messageProcessing.h>
 
 // config 
 #define MAX_PENDING_CONNECTIONS 10
@@ -70,8 +71,12 @@ void *handleRequest(void *input) {
   // Receive command from client 
   size_t received_msg_size = read_and_store_string(payload->socket, buffer_ptr);
   handle_error(received_msg_size, "recive failed", THREAD_EXIT);
-
   log_info("Thread %ld: Recived: '%s'", threadID, *buffer_ptr);
+
+  char *return_msg = handle_message(received_msg_size, *buffer_ptr);
+
+  log_info("Thread %ld: Responding: '%s'", threadID, return_msg);
+  write_string(payload->socket, return_msg, -1);
 
   // Close client socket 
   close(payload->socket);    
