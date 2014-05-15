@@ -25,6 +25,7 @@
 #include <messageProcessing.h>
 
 #include <string.h>
+#include <stdio.h>
 
 typedef struct file {
   char length[SIZE_MAX_BUFLEN+1];
@@ -39,11 +40,11 @@ struct protocoll {
 };
 
 
-#line 121 "lib/messageProcessing.rl"
+#line 122 "lib/messageProcessing.rl"
 
 
 
-#line 47 "lib/messageProcessing.c"
+#line 48 "lib/messageProcessing.c"
 static const char _protocoll_actions[] = {
 	0, 1, 0, 1, 2, 1, 3, 1, 
 	4, 1, 5, 1, 7, 2, 1, 10, 
@@ -152,7 +153,7 @@ static const int protocoll_error = 0;
 static const int protocoll_en_main = 1;
 
 
-#line 124 "lib/messageProcessing.rl"
+#line 125 "lib/messageProcessing.rl"
 
 // Responses
 // Errors
@@ -161,7 +162,7 @@ static const int protocoll_en_main = 1;
 #define COMMAND_UNKNOWN "COMMAND_UNKNOWN\n"
 
 // positive responses
-#define ACK "ACK\n"
+#define ACK "ACK"
 #define FILECREATED "FILECREATED\n"
 #define FILECONTENT "FILECONTENT\n"
 #define DELETED "DELETED\n"
@@ -177,9 +178,20 @@ static const int protocoll_en_main = 1;
 char *list_files(ConcurrentLinkedList *list) {
   log_info("Performing LIST");
 
-  
+  log_debug("list_files list: %p", list);
+  char len_c[SIZE_MAX_BUFLEN+1];
+  char *files;
 
-  return ACK;
+  size_t len = getAllElemmentIDs(list, &files);
+  log_debug("list_files len: %d", len);
+
+  snprintf(len_c, SIZE_MAX_BUFLEN, "%d", len);
+
+  char *to_return = join_with_seperator(ACK,len_c," ");
+  to_return = join_with_seperator(to_return, files,"");
+  join_with_seperator(to_return,"", "\n");
+
+  return to_return;
 }
 
 /*
@@ -192,6 +204,8 @@ char *list_files(ConcurrentLinkedList *list) {
  */
 char *create_file(ConcurrentLinkedList *list, File *file) {
   log_info("Performing CREATE %s", file->filename);
+
+  //ignore len if > MAX_BUFLEN
 
   return FILECREATED;
 }
@@ -222,6 +236,8 @@ char *read_file(ConcurrentLinkedList *list, File *file) {
 char *update_file(ConcurrentLinkedList *list, File *file) {
   log_info("Performing UPDATE %s", file->filename);
 
+  //ignore len if > MAX_BUFLEN
+
   return UPDATED;
 }
 
@@ -239,7 +255,7 @@ char *delete_file(ConcurrentLinkedList *list, File *file) {
   return DELETED;
 }
 
-char *handle_message(size_t msg_size, char *msg, ConcurrentLinkedList *list) {
+char *handle_message(size_t msg_size, char *msg, ConcurrentLinkedList *file_list) {
 
   log_debug("handle_message got msg %s", msg);
   log_debug("handle_message got len %d", msg_size);
@@ -249,18 +265,18 @@ char *handle_message(size_t msg_size, char *msg, ConcurrentLinkedList *list) {
   fsm->buflen = 0;
 
   
-#line 253 "lib/messageProcessing.c"
+#line 269 "lib/messageProcessing.c"
 	{
 	 fsm->cs = protocoll_start;
 	}
 
-#line 220 "lib/messageProcessing.rl"
+#line 236 "lib/messageProcessing.rl"
   log_debug("init done");
 
   char *p = msg;
   char *pe = p + msg_size;
   
-#line 264 "lib/messageProcessing.c"
+#line 280 "lib/messageProcessing.c"
 	{
 	int _klen;
 	unsigned int _trans;
@@ -335,7 +351,7 @@ _match:
 		switch ( *_acts++ )
 		{
 	case 0:
-#line 47 "lib/messageProcessing.rl"
+#line 48 "lib/messageProcessing.rl"
 	{
       if ( fsm->buflen < MAX_BUFLEN ) {
         log_debug("content buffer + %c", (*p));
@@ -344,7 +360,7 @@ _match:
     }
 	break;
 	case 1:
-#line 53 "lib/messageProcessing.rl"
+#line 54 "lib/messageProcessing.rl"
 	{
       if ( fsm->buflen < MAX_BUFLEN ) {
         log_debug("content buffer finished");
@@ -353,7 +369,7 @@ _match:
     }
 	break;
 	case 2:
-#line 61 "lib/messageProcessing.rl"
+#line 62 "lib/messageProcessing.rl"
 	{
       if ( fsm->buflen < MAX_BUFLEN ) {
         log_debug("filename buffer + %c", (*p));
@@ -362,7 +378,7 @@ _match:
     }
 	break;
 	case 3:
-#line 67 "lib/messageProcessing.rl"
+#line 68 "lib/messageProcessing.rl"
 	{
       if ( fsm->buflen < MAX_BUFLEN ) {
         log_debug("filename buffer finished");
@@ -371,7 +387,7 @@ _match:
     }
 	break;
 	case 4:
-#line 75 "lib/messageProcessing.rl"
+#line 76 "lib/messageProcessing.rl"
 	{
       if ( fsm->buflen < MAX_BUFLEN ) {
         log_debug("len buffer + %c", (*p));
@@ -380,7 +396,7 @@ _match:
     }
 	break;
 	case 5:
-#line 81 "lib/messageProcessing.rl"
+#line 82 "lib/messageProcessing.rl"
 	{
       if ( fsm->buflen < MAX_BUFLEN ) {
         log_debug("len buffer finished");
@@ -389,33 +405,33 @@ _match:
     }
 	break;
 	case 6:
-#line 89 "lib/messageProcessing.rl"
+#line 90 "lib/messageProcessing.rl"
 	{ 
       log_debug("new buffer prepared");
       fsm->buflen = 0; 
     }
 	break;
 	case 7:
-#line 101 "lib/messageProcessing.rl"
-	{ return list_files(list); }
+#line 102 "lib/messageProcessing.rl"
+	{ return list_files(file_list); }
 	break;
 	case 8:
-#line 102 "lib/messageProcessing.rl"
-	{ return read_file(list, &fsm->file); }
+#line 103 "lib/messageProcessing.rl"
+	{ return read_file(file_list, &fsm->file); }
 	break;
 	case 9:
-#line 103 "lib/messageProcessing.rl"
-	{ return delete_file(list, &fsm->file); }
+#line 104 "lib/messageProcessing.rl"
+	{ return delete_file(file_list, &fsm->file); }
 	break;
 	case 10:
-#line 104 "lib/messageProcessing.rl"
-	{ return update_file(list, &fsm->file); }
+#line 105 "lib/messageProcessing.rl"
+	{ return update_file(file_list, &fsm->file); }
 	break;
 	case 11:
-#line 105 "lib/messageProcessing.rl"
-	{ return create_file(list, &fsm->file); }
+#line 106 "lib/messageProcessing.rl"
+	{ return create_file(file_list, &fsm->file); }
 	break;
-#line 419 "lib/messageProcessing.c"
+#line 435 "lib/messageProcessing.c"
 		}
 	}
 
@@ -428,7 +444,7 @@ _again:
 	_out: {}
 	}
 
-#line 225 "lib/messageProcessing.rl"
+#line 241 "lib/messageProcessing.rl"
   log_debug("exec done");
 
   // save  default

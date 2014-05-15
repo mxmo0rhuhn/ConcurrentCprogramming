@@ -23,6 +23,7 @@
 #include <messageProcessing.h>
 
 #include <string.h>
+#include <stdio.h>
 
 typedef struct file {
   char length[SIZE_MAX_BUFLEN+1];
@@ -98,11 +99,11 @@ struct protocoll {
     content = alnum+ >init $append_content %term_content;
 
 # action definitions
-    action list { return list_files(list); }
-    action read { return read_file(list, &fsm->file); }
-    action delete { return delete_file(list, &fsm->file); }
-    action update { return update_file(list, &fsm->file); }
-    action create { return create_file(list, &fsm->file); }
+    action list { return list_files(file_list); }
+    action read { return read_file(file_list, &fsm->file); }
+    action delete { return delete_file(file_list, &fsm->file); }
+    action update { return update_file(file_list, &fsm->file); }
+    action create { return create_file(file_list, &fsm->file); }
 
 # Machine definition
     list = 'LIST\n'  @list;
@@ -129,7 +130,7 @@ main := (
 #define COMMAND_UNKNOWN "COMMAND_UNKNOWN\n"
 
 // positive responses
-#define ACK "ACK\n"
+#define ACK "ACK"
 #define FILECREATED "FILECREATED\n"
 #define FILECONTENT "FILECONTENT\n"
 #define DELETED "DELETED\n"
@@ -145,9 +146,20 @@ main := (
 char *list_files(ConcurrentLinkedList *list) {
   log_info("Performing LIST");
 
-  
+  log_debug("list_files list: %p", list);
+  char len_c[SIZE_MAX_BUFLEN+1];
+  char *files;
 
-  return ACK;
+  size_t len = getAllElemmentIDs(list, &files);
+  log_debug("list_files len: %d", len);
+
+  snprintf(len_c, SIZE_MAX_BUFLEN, "%d", len);
+
+  char *to_return = join_with_seperator(ACK,len_c," ");
+  to_return = join_with_seperator(to_return, files,"");
+  join_with_seperator(to_return,"", "\n");
+
+  return to_return;
 }
 
 /*
@@ -160,6 +172,8 @@ char *list_files(ConcurrentLinkedList *list) {
  */
 char *create_file(ConcurrentLinkedList *list, File *file) {
   log_info("Performing CREATE %s", file->filename);
+
+  //ignore len if > MAX_BUFLEN
 
   return FILECREATED;
 }
@@ -190,6 +204,8 @@ char *read_file(ConcurrentLinkedList *list, File *file) {
 char *update_file(ConcurrentLinkedList *list, File *file) {
   log_info("Performing UPDATE %s", file->filename);
 
+  //ignore len if > MAX_BUFLEN
+
   return UPDATED;
 }
 
@@ -207,7 +223,7 @@ char *delete_file(ConcurrentLinkedList *list, File *file) {
   return DELETED;
 }
 
-char *handle_message(size_t msg_size, char *msg, ConcurrentLinkedList *list) {
+char *handle_message(size_t msg_size, char *msg, ConcurrentLinkedList *file_list) {
 
   log_debug("handle_message got msg %s", msg);
   log_debug("handle_message got len %d", msg_size);

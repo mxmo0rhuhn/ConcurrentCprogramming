@@ -192,6 +192,7 @@ int main ( int argc, char *argv[] ) {
   }
   // Creation of the file list
   ConcurrentLinkedList *file_list = newList();
+  log_debug("server file_list: %p", file_list);
 
   // Creation of the active thread List
   ConcurrentLinkedList *threadList = newList();

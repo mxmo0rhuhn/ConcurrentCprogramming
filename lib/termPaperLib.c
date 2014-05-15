@@ -203,18 +203,18 @@ void write_string(int client_socket, char *str, size_t len) {
   
 char *join_with_seperator(const char *str1, const char *str2, const char *sep) {
 
+  log_debug("about to join '%s', '%s', '%s'", str1, sep, str2);
   size_t str1_len = strlen(str1);
   size_t str2_len = strlen(str2);
   size_t sep_len = strlen(sep);
 
+  size_t tmp_len = str1_len + str2_len + sep_len + 1;
+
   // number of bytes including \000
-  char *tmp = (char *) malloc(sizeof(unsigned char) * 
-                                  (str1_len + str2_len + sep_len + 1));
+  char *tmp = (char *) malloc(sizeof(unsigned char) * tmp_len);
   tmp[0] = '\000';
 
-  strncpy(tmp, str1, (str1_len));
-  strncpy(tmp, str2, (str2_len));
-  strncpy(tmp, sep, (sep_len));
+  snprintf(tmp, tmp_len, "%s%s%s", str1, sep, str2);
 
   return tmp;
 }

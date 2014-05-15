@@ -176,6 +176,7 @@ size_t getFirstListElement(ConcurrentLinkedList *list, void **payload) {
 
 size_t getAllElemmentIDs(ConcurrentLinkedList *list, char **IDs) {
 
+  log_debug("getAllElemmentIDs list: %p", list);
   size_t num_elem = 0;
   char *buffer = "\000";
 
