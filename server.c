@@ -38,11 +38,13 @@ typedef struct payload {
   pthread_t *thread;
   int socket;
   struct sockaddr_in client_address; 
+  ConcurrentLinkedList *file_list;
 } Payload;
 
 typedef struct listenerPayload {
   int port_number;
   ConcurrentLinkedList *threadList;
+  ConcurrentLinkedList *file_list;
 } ListenerPayload;
 
 void usage(char *programName, char *msg) {
@@ -73,7 +75,7 @@ void *handleRequest(void *input) {
   handle_error(received_msg_size, "recive failed", THREAD_EXIT);
   log_info("Thread %ld: Recived: '%s'", threadID, *buffer_ptr);
 
-  char *return_msg = handle_message(received_msg_size, *buffer_ptr);
+  char *return_msg = handle_message(received_msg_size, *buffer_ptr, payload->file_list);
 
   log_info("Thread %ld: Responding: '%s'", threadID, return_msg);
   write_string(payload->socket, return_msg, -1);
@@ -120,6 +122,7 @@ void *createSocketListener(void *input) {
     log_debug("Accept - Payload: %p", nextListEntry);
     nextListEntry->thread = malloc(sizeof(pthread_t));
     log_debug("allocated thread: %p", nextListEntry->thread);
+    nextListEntry->file_list = listenerPayload->file_list;
 
     // Wait for a client to connect 
     log_info("Socket Listener: Accepting new connections");
@@ -187,14 +190,17 @@ int main ( int argc, char *argv[] ) {
     log_info("found %d arguments", argc - 1);
     usage(programName, "wrong number of arguments");
   }
+  // Creation of the file list
+  ConcurrentLinkedList *file_list = newList();
 
-  // Creation of the linked list
+  // Creation of the active thread List
   ConcurrentLinkedList *threadList = newList();
   pthread_t socketListenerThread;
 
   ListenerPayload socketListenerPayload;
   socketListenerPayload.port_number = atoi(argv[1]); 
   socketListenerPayload.threadList = threadList;
+  socketListenerPayload.file_list = file_list;
 
   pthread_t cleanUpThread;
 

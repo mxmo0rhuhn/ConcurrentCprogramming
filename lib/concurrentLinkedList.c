@@ -173,3 +173,43 @@ size_t getFirstListElement(ConcurrentLinkedList *list, void **payload) {
 
   return payload_size;
 }
+
+size_t getAllElemmentIDs(ConcurrentLinkedList *list, char **IDs) {
+
+  size_t num_elem = 0;
+  char *buffer = "\000";
+
+  useFirstElement(list); 
+  ConcurrentListElement *next = list->firstElement;
+  ConcurrentListElement *current;
+
+  if(next != NULL ) {
+
+    useElement(next);
+
+    num_elem++;
+    join_with_seperator(buffer, next->ID, "\n");
+
+    returnFirstElement(list); 
+    current = next;
+    next = current->nextEntry;
+
+    while(next != NULL ) {
+      useElement(next);
+
+      num_elem++;
+      join_with_seperator(buffer, next->ID, "\n");
+
+      returnElement(current);
+      current = next;
+      next = current->nextEntry;
+    }
+    returnElement(current);
+  } else {
+    // Empty list
+    returnFirstElement(list); 
+  }
+
+  *IDs = buffer;
+  return num_elem;
+}

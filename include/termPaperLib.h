@@ -74,4 +74,9 @@ size_t read_and_store_string(int client_socket, char **result) ;
  * @param len length of string to be transmitted
  */
 void write_string(int client_socket, char *str, size_t len) ;
+
+/*
+ * Joins two strings with a given seperator and returns the concatinated string
+ */
+char *join_with_seperator(const char *str1, const char *str2, const char *sep) ;
 #endif

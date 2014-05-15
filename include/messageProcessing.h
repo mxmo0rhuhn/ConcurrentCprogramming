@@ -22,11 +22,16 @@
 #ifndef _MESSAGE_PROCESSING_HEADER
 #define _MESSAGE_PROCESSING_HEADER
 
+#include <concurrentLinkedList.h>
+
 // max. size for FILENAME and CONTENT for security reasons 
 #define MAX_BUFLEN 1024
 // number of chars for the decimal representation of the MAX_BUFLEN
 #define SIZE_MAX_BUFLEN 4
 
-char *handle_message(size_t msg_size, char *msg) ;
+/**
+ * Handle the given request on the given linked list
+ */
+char *handle_message(size_t msg_size, char *msg, ConcurrentLinkedList *list) ;
 
 #endif

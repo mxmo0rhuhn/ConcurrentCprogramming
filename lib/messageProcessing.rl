@@ -30,7 +30,7 @@ struct protocoll {
   char length[SIZE_MAX_BUFLEN+1];
   char filename[MAX_BUFLEN+1];
   char content[MAX_BUFLEN+1];
-  char *to_return;
+//  char *to_return;
 };
 
 %%{
@@ -95,11 +95,16 @@ struct protocoll {
     content = alnum+ >init $append_content %term_content;
 
 # action definitions
-    action list { fsm->to_return = list_files(); }
-    action read { fsm->to_return = read_file(fsm->filename); }
-    action delete { fsm->to_return = delete_file(fsm->filename); }
-    action update { fsm->to_return = update_file(fsm->filename, fsm->length, fsm->content); }
-    action create { fsm->to_return = create_file(fsm->filename, fsm->length, fsm->content); }
+#    action list { fsm->to_return = list_files(); }
+#    action read { fsm->to_return = read_file(fsm->filename); }
+#    action delete { fsm->to_return = delete_file(fsm->filename); }
+#    action update { fsm->to_return = update_file(fsm->filename, fsm->length, fsm->content); }
+#    action create { fsm->to_return = create_file(fsm->filename, fsm->length, fsm->content); }
+    action list { return list_files(); }
+    action read { return read_file(fsm->filename); }
+    action delete { return delete_file(fsm->filename); }
+    action update { return update_file(fsm->filename, fsm->length, fsm->content); }
+    action create { return create_file(fsm->filename, fsm->length, fsm->content); }
 
 # Machine definition
     list = 'LIST\n'  @list;
@@ -141,6 +146,9 @@ main := (
  */
 char *list_files() {
   log_info("Performing LIST");
+
+  
+
   return ACK;
 }
 
@@ -201,7 +209,7 @@ char *delete_file(char *filename) {
   return DELETED;
 }
 
-char *handle_message(size_t msg_size, char *msg) {
+char *handle_message(size_t msg_size, char *msg, ConcurrentLinkedList *list) {
 
   log_debug("handle_message got msg %s", msg);
   log_debug("handle_message got len %d", msg_size);
@@ -217,10 +225,6 @@ char *handle_message(size_t msg_size, char *msg) {
   char *pe = p + msg_size;
   %% write exec;
   log_debug("exec done");
-
-  if ( fsm->cs >= protocoll_first_final ) {
-    return fsm->to_return;
-  }
 
   // save  default
   log_error( "Command unknown: '%s'", msg);

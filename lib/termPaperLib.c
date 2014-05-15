@@ -200,3 +200,21 @@ void write_string(int client_socket, char *str, size_t len) {
     ptr += partial_len;
   }
 }
+  
+char *join_with_seperator(const char *str1, const char *str2, const char *sep) {
+
+  size_t str1_len = strlen(str1);
+  size_t str2_len = strlen(str2);
+  size_t sep_len = strlen(sep);
+
+  // number of bytes including \000
+  char *tmp = (char *) malloc(sizeof(unsigned char) * 
+                                  (str1_len + str2_len + sep_len + 1));
+  tmp[0] = '\000';
+
+  strncpy(tmp, str1, (str1_len));
+  strncpy(tmp, str2, (str2_len));
+  strncpy(tmp, sep, (sep_len));
+
+  return tmp;
+}

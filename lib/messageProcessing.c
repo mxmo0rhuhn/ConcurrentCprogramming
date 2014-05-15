@@ -32,11 +32,11 @@ struct protocoll {
   char length[SIZE_MAX_BUFLEN+1];
   char filename[MAX_BUFLEN+1];
   char content[MAX_BUFLEN+1];
-  char *to_return;
+//  char *to_return;
 };
 
 
-#line 118 "lib/messageProcessing.rl"
+#line 123 "lib/messageProcessing.rl"
 
 
 
@@ -149,7 +149,7 @@ static const int protocoll_error = 0;
 static const int protocoll_en_main = 1;
 
 
-#line 121 "lib/messageProcessing.rl"
+#line 126 "lib/messageProcessing.rl"
 
 // Responses
 // Errors
@@ -173,6 +173,9 @@ static const int protocoll_en_main = 1;
  */
 char *list_files() {
   log_info("Performing LIST");
+
+  
+
   return ACK;
 }
 
@@ -233,7 +236,7 @@ char *delete_file(char *filename) {
   return DELETED;
 }
 
-char *handle_message(size_t msg_size, char *msg) {
+char *handle_message(size_t msg_size, char *msg, ConcurrentLinkedList *list) {
 
   log_debug("handle_message got msg %s", msg);
   log_debug("handle_message got len %d", msg_size);
@@ -243,18 +246,18 @@ char *handle_message(size_t msg_size, char *msg) {
   fsm->buflen = 0;
 
   
-#line 247 "lib/messageProcessing.c"
+#line 250 "lib/messageProcessing.c"
 	{
 	 fsm->cs = protocoll_start;
 	}
 
-#line 214 "lib/messageProcessing.rl"
+#line 222 "lib/messageProcessing.rl"
   log_debug("init done");
 
   char *p = msg;
   char *pe = p + msg_size;
   
-#line 258 "lib/messageProcessing.c"
+#line 261 "lib/messageProcessing.c"
 	{
 	int _klen;
 	unsigned int _trans;
@@ -390,26 +393,26 @@ _match:
     }
 	break;
 	case 7:
-#line 98 "lib/messageProcessing.rl"
-	{ fsm->to_return = list_files(); }
+#line 103 "lib/messageProcessing.rl"
+	{ return list_files(); }
 	break;
 	case 8:
-#line 99 "lib/messageProcessing.rl"
-	{ fsm->to_return = read_file(fsm->filename); }
+#line 104 "lib/messageProcessing.rl"
+	{ return read_file(fsm->filename); }
 	break;
 	case 9:
-#line 100 "lib/messageProcessing.rl"
-	{ fsm->to_return = delete_file(fsm->filename); }
+#line 105 "lib/messageProcessing.rl"
+	{ return delete_file(fsm->filename); }
 	break;
 	case 10:
-#line 101 "lib/messageProcessing.rl"
-	{ fsm->to_return = update_file(fsm->filename, fsm->length, fsm->content); }
+#line 106 "lib/messageProcessing.rl"
+	{ return update_file(fsm->filename, fsm->length, fsm->content); }
 	break;
 	case 11:
-#line 102 "lib/messageProcessing.rl"
-	{ fsm->to_return = create_file(fsm->filename, fsm->length, fsm->content); }
+#line 107 "lib/messageProcessing.rl"
+	{ return create_file(fsm->filename, fsm->length, fsm->content); }
 	break;
-#line 413 "lib/messageProcessing.c"
+#line 416 "lib/messageProcessing.c"
 		}
 	}
 
@@ -422,12 +425,8 @@ _again:
 	_out: {}
 	}
 
-#line 219 "lib/messageProcessing.rl"
+#line 227 "lib/messageProcessing.rl"
   log_debug("exec done");
-
-  if ( fsm->cs >= protocoll_first_final ) {
-    return fsm->to_return;
-  }
 
   // save  default
   log_error( "Command unknown: '%s'", msg);

@@ -67,4 +67,9 @@ size_t getFirstListElement(ConcurrentLinkedList *list, void **payload);
  * Removes the first element of the List - if existing
  */
 void removeFirstListElement(ConcurrentLinkedList *list);
+
+/**
+ * Returnes a \n seperated list of element IDs
+ */
+size_t getAllElemmentIDs(ConcurrentLinkedList *list, char **IDs);
 #endif
