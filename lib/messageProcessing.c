@@ -26,21 +26,24 @@
 
 #include <string.h>
 
-struct protocoll {
-  int cs;
-  int buflen;
+typedef struct file {
   char length[SIZE_MAX_BUFLEN+1];
   char filename[MAX_BUFLEN+1];
   char content[MAX_BUFLEN+1];
-//  char *to_return;
+} File;
+
+struct protocoll {
+  int cs;
+  int buflen;
+  File file;
 };
 
 
-#line 123 "lib/messageProcessing.rl"
+#line 121 "lib/messageProcessing.rl"
 
 
 
-#line 44 "lib/messageProcessing.c"
+#line 47 "lib/messageProcessing.c"
 static const char _protocoll_actions[] = {
 	0, 1, 0, 1, 2, 1, 3, 1, 
 	4, 1, 5, 1, 7, 2, 1, 10, 
@@ -149,7 +152,7 @@ static const int protocoll_error = 0;
 static const int protocoll_en_main = 1;
 
 
-#line 126 "lib/messageProcessing.rl"
+#line 124 "lib/messageProcessing.rl"
 
 // Responses
 // Errors
@@ -171,7 +174,7 @@ static const int protocoll_en_main = 1;
  *      ACK NUM_FILES\n
  *      FILENAME\n
  */
-char *list_files() {
+char *list_files(ConcurrentLinkedList *list) {
   log_info("Performing LIST");
 
   
@@ -187,8 +190,8 @@ char *list_files() {
  *  or
  *      FILECREATED\n
  */
-char *create_file(char *filename, char* length, char *content) {
-  log_info("Performing CREATE %s", filename);
+char *create_file(ConcurrentLinkedList *list, File *file) {
+  log_info("Performing CREATE %s", file->filename);
 
   return FILECREATED;
 }
@@ -202,8 +205,8 @@ char *create_file(char *filename, char* length, char *content) {
  *      FILECONTENT FILENAME LENGTH\n
  *      CONTENT
  */
-char *read_file(char *filename) {
-  log_info("Performing READ %s", filename);
+char *read_file(ConcurrentLinkedList *list, File *file) {
+  log_info("Performing READ %s", file->filename);
 
   return NOSUCHFILE;
 }
@@ -216,8 +219,8 @@ char *read_file(char *filename) {
  *  or
  *      UPDATED\n
  */
-char *update_file(char *filename, char *length, char *content) {
-  log_info("Performing UPDATE %s", filename);
+char *update_file(ConcurrentLinkedList *list, File *file) {
+  log_info("Performing UPDATE %s", file->filename);
 
   return UPDATED;
 }
@@ -230,8 +233,8 @@ char *update_file(char *filename, char *length, char *content) {
  *  or
  *      DELETED\n
  */
-char *delete_file(char *filename) {
-  log_info("Performing DELETE %s", filename);
+char *delete_file(ConcurrentLinkedList *list, File *file) {
+  log_info("Performing DELETE %s", file->filename);
   
   return DELETED;
 }
@@ -246,18 +249,18 @@ char *handle_message(size_t msg_size, char *msg, ConcurrentLinkedList *list) {
   fsm->buflen = 0;
 
   
-#line 250 "lib/messageProcessing.c"
+#line 253 "lib/messageProcessing.c"
 	{
 	 fsm->cs = protocoll_start;
 	}
 
-#line 222 "lib/messageProcessing.rl"
+#line 220 "lib/messageProcessing.rl"
   log_debug("init done");
 
   char *p = msg;
   char *pe = p + msg_size;
   
-#line 261 "lib/messageProcessing.c"
+#line 264 "lib/messageProcessing.c"
 	{
 	int _klen;
 	unsigned int _trans;
@@ -332,87 +335,87 @@ _match:
 		switch ( *_acts++ )
 		{
 	case 0:
-#line 44 "lib/messageProcessing.rl"
+#line 47 "lib/messageProcessing.rl"
 	{
       if ( fsm->buflen < MAX_BUFLEN ) {
         log_debug("content buffer + %c", (*p));
-        fsm->content[fsm->buflen++] = (*p);
+        fsm->file.content[fsm->buflen++] = (*p);
       }
     }
 	break;
 	case 1:
-#line 50 "lib/messageProcessing.rl"
+#line 53 "lib/messageProcessing.rl"
 	{
       if ( fsm->buflen < MAX_BUFLEN ) {
         log_debug("content buffer finished");
-        fsm->content[fsm->buflen++] = '\000';
+        fsm->file.content[fsm->buflen++] = '\000';
       }
     }
 	break;
 	case 2:
-#line 58 "lib/messageProcessing.rl"
+#line 61 "lib/messageProcessing.rl"
 	{
       if ( fsm->buflen < MAX_BUFLEN ) {
         log_debug("filename buffer + %c", (*p));
-        fsm->filename[fsm->buflen++] = (*p);
+        fsm->file.filename[fsm->buflen++] = (*p);
       }
     }
 	break;
 	case 3:
-#line 64 "lib/messageProcessing.rl"
+#line 67 "lib/messageProcessing.rl"
 	{
       if ( fsm->buflen < MAX_BUFLEN ) {
         log_debug("filename buffer finished");
-        fsm->filename[fsm->buflen++] = '\000';
+        fsm->file.filename[fsm->buflen++] = '\000';
       }
     }
 	break;
 	case 4:
-#line 72 "lib/messageProcessing.rl"
+#line 75 "lib/messageProcessing.rl"
 	{
       if ( fsm->buflen < MAX_BUFLEN ) {
         log_debug("len buffer + %c", (*p));
-        fsm->length[fsm->buflen++] = (*p);
+        fsm->file.length[fsm->buflen++] = (*p);
       }
     }
 	break;
 	case 5:
-#line 78 "lib/messageProcessing.rl"
+#line 81 "lib/messageProcessing.rl"
 	{
       if ( fsm->buflen < MAX_BUFLEN ) {
         log_debug("len buffer finished");
-        fsm->length[fsm->buflen++] = '\000';
+        fsm->file.length[fsm->buflen++] = '\000';
       }
     }
 	break;
 	case 6:
-#line 86 "lib/messageProcessing.rl"
+#line 89 "lib/messageProcessing.rl"
 	{ 
       log_debug("new buffer prepared");
       fsm->buflen = 0; 
     }
 	break;
 	case 7:
-#line 103 "lib/messageProcessing.rl"
-	{ return list_files(); }
+#line 101 "lib/messageProcessing.rl"
+	{ return list_files(list); }
 	break;
 	case 8:
-#line 104 "lib/messageProcessing.rl"
-	{ return read_file(fsm->filename); }
+#line 102 "lib/messageProcessing.rl"
+	{ return read_file(list, &fsm->file); }
 	break;
 	case 9:
-#line 105 "lib/messageProcessing.rl"
-	{ return delete_file(fsm->filename); }
+#line 103 "lib/messageProcessing.rl"
+	{ return delete_file(list, &fsm->file); }
 	break;
 	case 10:
-#line 106 "lib/messageProcessing.rl"
-	{ return update_file(fsm->filename, fsm->length, fsm->content); }
+#line 104 "lib/messageProcessing.rl"
+	{ return update_file(list, &fsm->file); }
 	break;
 	case 11:
-#line 107 "lib/messageProcessing.rl"
-	{ return create_file(fsm->filename, fsm->length, fsm->content); }
+#line 105 "lib/messageProcessing.rl"
+	{ return create_file(list, &fsm->file); }
 	break;
-#line 416 "lib/messageProcessing.c"
+#line 419 "lib/messageProcessing.c"
 		}
 	}
 
@@ -425,7 +428,7 @@ _again:
 	_out: {}
 	}
 
-#line 227 "lib/messageProcessing.rl"
+#line 225 "lib/messageProcessing.rl"
   log_debug("exec done");
 
   // save  default

@@ -24,13 +24,16 @@
 
 #include <string.h>
 
-struct protocoll {
-  int cs;
-  int buflen;
+typedef struct file {
   char length[SIZE_MAX_BUFLEN+1];
   char filename[MAX_BUFLEN+1];
   char content[MAX_BUFLEN+1];
-//  char *to_return;
+} File;
+
+struct protocoll {
+  int cs;
+  int buflen;
+  File file;
 };
 
 %%{
@@ -44,13 +47,13 @@ struct protocoll {
     action append_content {
       if ( fsm->buflen < MAX_BUFLEN ) {
         log_debug("content buffer + %c", fc);
-        fsm->content[fsm->buflen++] = fc;
+        fsm->file.content[fsm->buflen++] = fc;
       }
     }
     action term_content {
       if ( fsm->buflen < MAX_BUFLEN ) {
         log_debug("content buffer finished");
-        fsm->content[fsm->buflen++] = '\000';
+        fsm->file.content[fsm->buflen++] = '\000';
       }
     }
 
@@ -58,13 +61,13 @@ struct protocoll {
     action append_filename {
       if ( fsm->buflen < MAX_BUFLEN ) {
         log_debug("filename buffer + %c", fc);
-        fsm->filename[fsm->buflen++] = fc;
+        fsm->file.filename[fsm->buflen++] = fc;
       }
     }
     action term_filename {
       if ( fsm->buflen < MAX_BUFLEN ) {
         log_debug("filename buffer finished");
-        fsm->filename[fsm->buflen++] = '\000';
+        fsm->file.filename[fsm->buflen++] = '\000';
       }
     }
 
@@ -72,13 +75,13 @@ struct protocoll {
     action append_length {
       if ( fsm->buflen < MAX_BUFLEN ) {
         log_debug("len buffer + %c", fc);
-        fsm->length[fsm->buflen++] = fc;
+        fsm->file.length[fsm->buflen++] = fc;
       }
     }
     action term_length {
       if ( fsm->buflen < MAX_BUFLEN ) {
         log_debug("len buffer finished");
-        fsm->length[fsm->buflen++] = '\000';
+        fsm->file.length[fsm->buflen++] = '\000';
       }
     }
 
@@ -95,16 +98,11 @@ struct protocoll {
     content = alnum+ >init $append_content %term_content;
 
 # action definitions
-#    action list { fsm->to_return = list_files(); }
-#    action read { fsm->to_return = read_file(fsm->filename); }
-#    action delete { fsm->to_return = delete_file(fsm->filename); }
-#    action update { fsm->to_return = update_file(fsm->filename, fsm->length, fsm->content); }
-#    action create { fsm->to_return = create_file(fsm->filename, fsm->length, fsm->content); }
-    action list { return list_files(); }
-    action read { return read_file(fsm->filename); }
-    action delete { return delete_file(fsm->filename); }
-    action update { return update_file(fsm->filename, fsm->length, fsm->content); }
-    action create { return create_file(fsm->filename, fsm->length, fsm->content); }
+    action list { return list_files(list); }
+    action read { return read_file(list, &fsm->file); }
+    action delete { return delete_file(list, &fsm->file); }
+    action update { return update_file(list, &fsm->file); }
+    action create { return create_file(list, &fsm->file); }
 
 # Machine definition
     list = 'LIST\n'  @list;
@@ -144,7 +142,7 @@ main := (
  *      ACK NUM_FILES\n
  *      FILENAME\n
  */
-char *list_files() {
+char *list_files(ConcurrentLinkedList *list) {
   log_info("Performing LIST");
 
   
@@ -160,8 +158,8 @@ char *list_files() {
  *  or
  *      FILECREATED\n
  */
-char *create_file(char *filename, char* length, char *content) {
-  log_info("Performing CREATE %s", filename);
+char *create_file(ConcurrentLinkedList *list, File *file) {
+  log_info("Performing CREATE %s", file->filename);
 
   return FILECREATED;
 }
@@ -175,8 +173,8 @@ char *create_file(char *filename, char* length, char *content) {
  *      FILECONTENT FILENAME LENGTH\n
  *      CONTENT
  */
-char *read_file(char *filename) {
-  log_info("Performing READ %s", filename);
+char *read_file(ConcurrentLinkedList *list, File *file) {
+  log_info("Performing READ %s", file->filename);
 
   return NOSUCHFILE;
 }
@@ -189,8 +187,8 @@ char *read_file(char *filename) {
  *  or
  *      UPDATED\n
  */
-char *update_file(char *filename, char *length, char *content) {
-  log_info("Performing UPDATE %s", filename);
+char *update_file(ConcurrentLinkedList *list, File *file) {
+  log_info("Performing UPDATE %s", file->filename);
 
   return UPDATED;
 }
@@ -203,8 +201,8 @@ char *update_file(char *filename, char *length, char *content) {
  *  or
  *      DELETED\n
  */
-char *delete_file(char *filename) {
-  log_info("Performing DELETE %s", filename);
+char *delete_file(ConcurrentLinkedList *list, File *file) {
+  log_info("Performing DELETE %s", file->filename);
   
   return DELETED;
 }
