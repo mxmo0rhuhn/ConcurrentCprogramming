@@ -59,7 +59,7 @@ void appendListElement(ConcurrentLinkedList *list, void **payload,
  * Returns a shallow copy of the first element!
  * ATTENTION: This will not secure the integrity of the target of pointers
  *            in the payload of the element!
- * The copy has to be freed by the calling thread
+ * The copy has to be freed by the caller
  */
 size_t getFirstListElement(ConcurrentLinkedList *list, void **payload);
 
@@ -72,4 +72,12 @@ void removeFirstListElement(ConcurrentLinkedList *list);
  * Returnes a \n seperated list of element IDs
  */
 size_t getAllElemmentIDs(ConcurrentLinkedList *list, char **IDs);
+
+/**
+ * ATTENTION: This will not secure the integrity of the target of pointers
+ *            in the payload of the element!
+ * The copy has to be freed by caller
+ * Returns a shallow copy of a element 
+ */
+size_t getElementByID(ConcurrentLinkedList *list, void **payload, char *ID);
 #endif

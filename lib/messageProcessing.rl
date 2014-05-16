@@ -157,7 +157,7 @@ char *list_files(ConcurrentLinkedList *list) {
 
   char *to_return = join_with_seperator(ACK,len_c," ");
   to_return = join_with_seperator(to_return, files,"");
-  join_with_seperator(to_return,"", "\n");
+  to_return = join_with_seperator(to_return,"", "\n");
 
   return to_return;
 }
@@ -189,8 +189,20 @@ char *create_file(ConcurrentLinkedList *list, File *file) {
  */
 char *read_file(ConcurrentLinkedList *list, File *file) {
   log_info("Performing READ %s", file->filename);
+  char *payload;
+  char *to_return = NOSUCHFILE;
+  size_t len = getElementByID(list, (void *) &payload, file->filename );
 
-  return NOSUCHFILE;
+  if (len > 0) {
+    char len_c[SIZE_MAX_BUFLEN+1];
+    snprintf(len_c, SIZE_MAX_BUFLEN, "%d", len);
+
+    to_return = join_with_seperator(FILECONTENT, file->filename, " ");
+    to_return = join_with_seperator(to_return, len_c," ");
+    to_return = join_with_seperator(to_return, payload,"\n");
+    to_return = join_with_seperator(to_return,"", "\n");
+  } 
+  return to_return;
 }
 
 /*

@@ -189,7 +189,7 @@ char *list_files(ConcurrentLinkedList *list) {
 
   char *to_return = join_with_seperator(ACK,len_c," ");
   to_return = join_with_seperator(to_return, files,"");
-  join_with_seperator(to_return,"", "\n");
+  to_return = join_with_seperator(to_return,"", "\n");
 
   return to_return;
 }
@@ -221,8 +221,20 @@ char *create_file(ConcurrentLinkedList *list, File *file) {
  */
 char *read_file(ConcurrentLinkedList *list, File *file) {
   log_info("Performing READ %s", file->filename);
+  char *payload;
+  char *to_return = NOSUCHFILE;
+  size_t len = getElementByID(list, (void *) &payload, file->filename );
 
-  return NOSUCHFILE;
+  if (len > 0) {
+    char len_c[SIZE_MAX_BUFLEN+1];
+    snprintf(len_c, SIZE_MAX_BUFLEN, "%d", len);
+
+    to_return = join_with_seperator(FILECONTENT, file->filename, " ");
+    to_return = join_with_seperator(to_return, len_c," ");
+    to_return = join_with_seperator(to_return, payload,"\n");
+    to_return = join_with_seperator(to_return,"", "\n");
+  } 
+  return to_return;
 }
 
 /*
@@ -265,18 +277,18 @@ char *handle_message(size_t msg_size, char *msg, ConcurrentLinkedList *file_list
   fsm->buflen = 0;
 
   
-#line 269 "lib/messageProcessing.c"
+#line 281 "lib/messageProcessing.c"
 	{
 	 fsm->cs = protocoll_start;
 	}
 
-#line 236 "lib/messageProcessing.rl"
+#line 248 "lib/messageProcessing.rl"
   log_debug("init done");
 
   char *p = msg;
   char *pe = p + msg_size;
   
-#line 280 "lib/messageProcessing.c"
+#line 292 "lib/messageProcessing.c"
 	{
 	int _klen;
 	unsigned int _trans;
@@ -431,7 +443,7 @@ _match:
 #line 106 "lib/messageProcessing.rl"
 	{ return create_file(file_list, &fsm->file); }
 	break;
-#line 435 "lib/messageProcessing.c"
+#line 447 "lib/messageProcessing.c"
 		}
 	}
 
@@ -444,7 +456,7 @@ _again:
 	_out: {}
 	}
 
-#line 241 "lib/messageProcessing.rl"
+#line 253 "lib/messageProcessing.rl"
   log_debug("exec done");
 
   // save  default

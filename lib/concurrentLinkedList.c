@@ -50,6 +50,9 @@ void returnElement(ConcurrentListElement *element) {
   handle_thread_error(retcode, "unlock emement mutex", THREAD_EXIT);
 }
 
+/**
+ * Indicate interrest for the first element of a list
+ */
 void useFirstElement(ConcurrentLinkedList *list) {
 
   // As long as the list exists this lock will never end in nirvana
@@ -59,6 +62,9 @@ void useFirstElement(ConcurrentLinkedList *list) {
   ConcurrentListElement *element = list->firstElement;
 }
 
+/**
+ * Return the first element of a list
+ */
 void returnFirstElement(ConcurrentLinkedList *list) {
 
   // As long as the list exists this lock will never end in nirvana
@@ -66,11 +72,15 @@ void returnFirstElement(ConcurrentLinkedList *list) {
   handle_thread_error(retcode, "unlock first elements mutex", THREAD_EXIT);
 }
 
+/**
+ * remove a element ATTENTION: It has to be ensured, that
+ * no other thread can access the elemnt right now (the predecessor 
+ * has to be locked)
+ */
 ConcurrentListElement *removeElement(ConcurrentListElement *element) {
   useElement(element);
   ConcurrentListElement *next = element->nextEntry;
 
-  // no other thread can access the elemnt right now since the predecessor
   // is locked
   returnElement(element);
   // Pointer and real content
@@ -146,9 +156,11 @@ void appendListElement(ConcurrentLinkedList *list, void **payload,
 }
 
 size_t getFirstListElement(ConcurrentLinkedList *list, void **payload) {
+
+  size_t payload_size;
+
   useFirstElement(list); 
   ConcurrentListElement *first = list->firstElement;
-  size_t payload_size;
 
   if(first != NULL) {
 
@@ -213,4 +225,80 @@ size_t getAllElemmentIDs(ConcurrentLinkedList *list, char **IDs) {
 
   *IDs = buffer;
   return num_elem;
+}
+
+/**
+ * Returns a element for the given ID (if existing)
+ * this function keeps an active lock on the predecessor so 
+ * the element can savely be modifyed
+ * IF the predecessor is NULL the returned element is the first 
+ * element of the list
+ */
+ConcurrentListElement *useElementByID(ConcurrentLinkedList *list, ConcurrentListElement **predecessor, char *ID) {
+
+  *predecessor = NULL;
+  ConcurrentListElement *return_element = NULL;
+
+  useFirstElement(list); 
+  ConcurrentListElement *next = list->firstElement;
+  ConcurrentListElement *current;
+
+  if(next != NULL ) {
+
+    if (strcmp(next->ID, ID) == 0) {
+      return_element = next;
+      next = NULL;
+    } else {
+      useElement(next);
+      returnFirstElement(list); 
+
+      *predecessor = next;
+      current = next;
+      next = current->nextEntry;
+    }
+
+    while(next != NULL ) {
+
+      if (strcmp(next->ID, ID) == 0) {
+        return_element = next;
+        next = NULL;
+      } else {
+        useElement(next);
+        returnElement(current);
+
+        *predecessor = next;
+        current = next;
+        next = current->nextEntry;
+      }
+    } 
+  }
+  // Keep the lock on the first element active in case of a 
+  // empty list => no else
+
+  return return_element;
+}
+
+size_t getElementByID(ConcurrentLinkedList *list, void **payload, char *ID) {
+  size_t payload_size = 0; 
+  *payload = NULL; 
+  ConcurrentListElement *elem;
+  ConcurrentListElement *predecessor;
+
+  elem = useElementByID(list, &predecessor, ID) ;
+
+  if (elem != NULL) {
+    useElement(elem);
+    payload_size = elem->payload_size;
+    *payload = malloc(payload_size);
+    memcpy(*payload, elem->payload, payload_size);
+    returnElement(elem);
+  }
+
+  if(predecessor != NULL){
+    returnElement(predecessor);
+  } else {
+    returnFirstElement(list);
+  }
+
+  return payload_size;
 }
