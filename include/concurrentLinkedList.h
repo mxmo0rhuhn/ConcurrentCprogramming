@@ -56,6 +56,13 @@ void appendListElement(ConcurrentLinkedList *list, void **payload,
                        size_t payload_size, char* ID) ;
 
 /*
+ * Adds an element to the end of the list if no element with the same ID exists
+ */
+int appendUniqueListElement(ConcurrentLinkedList *list, void **payload, 
+                       size_t payload_size, char* ID) ;
+
+
+/*
  * Returns a shallow copy of the first element!
  * ATTENTION: This will not secure the integrity of the target of pointers
  *            in the payload of the element!

@@ -34,8 +34,11 @@ void usage(const char *argv0, const char *msg) {
   }
   printf("Usage\n\n");
   printf("%s <Server IP> [-c Command] [-p Port]\n", argv0);
-  printf("Connects to the Server and provides an interactive Commandline\n");
-  printf("You may also provide a certain command that is to be executed\n");
+  printf("Connects to the Server and provides an interactive multiline Commandline\n");
+  printf("You may also provide a certain command that is to be executed with -c\n");
+  printf("If you want to specify a second line that is send to the server after\n");
+  printf("-c you can use -C \n");
+  printf("If you want to specify a special port use -p \n");
   printf("End with Ctrl-C or QUIT\n");
   exit(1);
 }
@@ -47,7 +50,7 @@ int main(int argc, char *argv[]) {
     usage(argv[0], "");
   }
 
-  if (argc < 2 || argc > 6) {    
+  if (argc < 2 ) {  
     usage(argv[0], "wrong number of arguments please provide an IP at least");
   }
 
@@ -79,6 +82,19 @@ int main(int argc, char *argv[]) {
       } else {
         usage(argv[0], "please provide a CMD if you're using -c");
       }
+    } else if (strcmp(argv[i], "-C") == 0)  {
+      if (i + 2 <= argc )  {
+
+        if(interactive == TRUE) {
+          usage(argv[0], "please provide a first line withe -c if you're using -C");
+        }
+
+        i++;
+        cmd = join_with_seperator(cmd, argv[i], "\n");
+        cmdLen = strlen(cmd);
+      } else {
+        usage(argv[0], "please provide a CMD if you're using -c");
+      }
     } else {
       usage(argv[0], "unknown input");
     }
@@ -100,7 +116,7 @@ int main(int argc, char *argv[]) {
 
     char *send;
     if (interactive  != TRUE){
-      send = cmd;
+      send = join_with_seperator(cmd, "", "\n");
     } else {
       char line[2048];
       char c;

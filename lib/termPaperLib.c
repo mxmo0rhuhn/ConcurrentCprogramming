@@ -203,7 +203,6 @@ void write_string(int client_socket, char *str, size_t len) {
   
 char *join_with_seperator(const char *str1, const char *str2, const char *sep) {
 
-  log_debug("about to join '%s', '%s', '%s'", str1, sep, str2);
   size_t str1_len = strlen(str1);
   size_t str2_len = strlen(str2);
   size_t sep_len = strlen(sep);

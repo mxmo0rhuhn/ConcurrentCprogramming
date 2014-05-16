@@ -84,12 +84,36 @@ ConcurrentListElement *removeElement(ConcurrentListElement *element) {
   // is locked
   returnElement(element);
   // Pointer and real content
-  log_debug("Remove payload: %p", element->payload);
-  log_debug("Remove element: %p", element);
 
+  log_debug("Remove payload: %p", element->payload);
   free(element->payload);
+  log_debug("Remove ID: %p", element->ID);
+  free(element->ID);
+  log_debug("Remove element: %p", element);
   free(element);
   return next;
+}
+
+ConcurrentListElement *createElement(void **payload, size_t payload_size, char *ID) {
+    ConcurrentListElement *new = malloc(sizeof(ConcurrentListElement));
+    new->payload = malloc(payload_size);
+    memcpy(new->payload, *payload, payload_size);
+
+    log_debug("Append payload: %p", *payload);
+    log_debug("Append element: %p", new);
+    log_debug("Append element payload: %p", new->payload);
+
+    pthread_mutex_t mutex = PTHREAD_MUTEX_INITIALIZER;
+    new->usageMutex = mutex; 
+    new->nextEntry = NULL;
+
+    size_t ID_len = strlen(ID);
+    new->ID= malloc(ID_len);
+    memcpy(new->ID, ID, ID_len);
+
+    new->payload_size=payload_size;
+
+    return new;
 }
 
 void removeAllElements(ConcurrentLinkedList *list) {
@@ -116,20 +140,8 @@ void removeFirstListElement(ConcurrentLinkedList *list) {
 
 void appendListElement(ConcurrentLinkedList *list, void **payload, 
     size_t payload_size, char* ID) {
-  ConcurrentListElement *new = malloc(sizeof(ConcurrentListElement));
-  new->payload = malloc(payload_size);
-  memcpy(new->payload, *payload, payload_size);
 
-  log_debug("Append payload: %p", *payload);
-  log_debug("Append payload size: %d", payload_size);
-  log_debug("Append element: %p", new);
-  log_debug("Append element payload: %p", new->payload);
-
-  pthread_mutex_t mutex = PTHREAD_MUTEX_INITIALIZER;
-  new->usageMutex = mutex; 
-  new->nextEntry = NULL;
-  new->ID=ID; 
-  new->payload_size=payload_size;
+  ConcurrentListElement *new = createElement(payload, payload_size, ID);
 
   useFirstElement(list); 
   ConcurrentListElement *next = list->firstElement;
@@ -169,12 +181,12 @@ size_t getFirstListElement(ConcurrentLinkedList *list, void **payload) {
     payload_size = first->payload_size;
 
     *payload = malloc(payload_size);
-    memcpy(*payload, first->payload, payload_size);
 
     log_debug("Original payload: %p", first->payload);
     log_debug("  Return payload: %p", *payload);
     log_debug("Payload size: %d", payload_size);
 
+    memcpy(*payload, first->payload, payload_size);
     returnElement(first);
 
   } else {
@@ -188,7 +200,6 @@ size_t getFirstListElement(ConcurrentLinkedList *list, void **payload) {
 
 size_t getAllElemmentIDs(ConcurrentLinkedList *list, char **IDs) {
 
-  log_debug("getAllElemmentIDs list: %p", list);
   size_t num_elem = 0;
   char *buffer = "\000";
 
@@ -201,7 +212,7 @@ size_t getAllElemmentIDs(ConcurrentLinkedList *list, char **IDs) {
     useElement(next);
 
     num_elem++;
-    join_with_seperator(buffer, next->ID, "\n");
+    buffer = join_with_seperator(buffer, next->ID, "\n");
 
     returnFirstElement(list); 
     current = next;
@@ -211,7 +222,7 @@ size_t getAllElemmentIDs(ConcurrentLinkedList *list, char **IDs) {
       useElement(next);
 
       num_elem++;
-      join_with_seperator(buffer, next->ID, "\n");
+      buffer = join_with_seperator(buffer, next->ID, "\n");
 
       returnElement(current);
       current = next;
@@ -281,9 +292,9 @@ ConcurrentListElement *useElementByID(ConcurrentLinkedList *list, ConcurrentList
 size_t getElementByID(ConcurrentLinkedList *list, void **payload, char *ID) {
   size_t payload_size = 0; 
   *payload = NULL; 
+
   ConcurrentListElement *elem;
   ConcurrentListElement *predecessor;
-
   elem = useElementByID(list, &predecessor, ID) ;
 
   if (elem != NULL) {
@@ -302,3 +313,32 @@ size_t getElementByID(ConcurrentLinkedList *list, void **payload, char *ID) {
 
   return payload_size;
 }
+
+int appendUniqueListElement(ConcurrentLinkedList *list, void **payload, 
+    size_t payload_size, char* ID) {
+  int return_value = 0;
+  ConcurrentListElement *elem;
+  ConcurrentListElement *predecessor;
+
+  elem = useElementByID(list, &predecessor, ID) ;
+
+  if (elem == NULL) {
+    ConcurrentListElement *new = createElement(payload, payload_size, ID);
+
+    if(predecessor != NULL){
+      predecessor->nextEntry = new;
+    } else {
+      list->firstElement = new;   
+    }
+  } else  {
+    return_value = 1;
+  }
+
+  if(predecessor != NULL){
+    returnElement(predecessor);
+  } else {
+    returnFirstElement(list);
+  }
+  return return_value;
+}
+

@@ -164,7 +164,7 @@ static const int protocoll_en_main = 1;
 // positive responses
 #define ACK "ACK"
 #define FILECREATED "FILECREATED\n"
-#define FILECONTENT "FILECONTENT\n"
+#define FILECONTENT "FILECONTENT"
 #define DELETED "DELETED\n"
 #define UPDATED "UPDATED\n"
 
@@ -178,17 +178,16 @@ static const int protocoll_en_main = 1;
 char *list_files(ConcurrentLinkedList *list) {
   log_info("Performing LIST");
 
-  log_debug("list_files list: %p", list);
+  // + \000
   char len_c[SIZE_MAX_BUFLEN+1];
   char *files;
 
   size_t len = getAllElemmentIDs(list, &files);
-  log_debug("list_files len: %d", len);
 
-  snprintf(len_c, SIZE_MAX_BUFLEN, "%d", len);
+  snprintf(len_c, SIZE_MAX_BUFLEN, "%zu", len);
 
   char *to_return = join_with_seperator(ACK,len_c," ");
-  to_return = join_with_seperator(to_return, files,"");
+  to_return = join_with_seperator(to_return, files, "");
   to_return = join_with_seperator(to_return,"", "\n");
 
   return to_return;
@@ -203,11 +202,25 @@ char *list_files(ConcurrentLinkedList *list) {
  *      FILECREATED\n
  */
 char *create_file(ConcurrentLinkedList *list, File *file) {
-  log_info("Performing CREATE %s", file->filename);
+  char *to_return = FILECREATED;
+  size_t payload_size = atoi(file->length);
 
   //ignore len if > MAX_BUFLEN
+  if(payload_size > MAX_BUFLEN) {
+    payload_size = MAX_BUFLEN;
+  }
 
-  return FILECREATED;
+  log_info("Performing CREATE %s, %zu", file->filename, payload_size);
+  log_info("Content: %s", file->content);
+
+  payload_size = (payload_size) * sizeof(unsigned char);
+  char *content = file->content;
+
+  if(0 != appendUniqueListElement(list, (void *) &content, payload_size, (file->filename))) {
+    to_return = FILEEXISTS;
+  } 
+
+  return to_return;
 }
 
 /*
@@ -221,13 +234,17 @@ char *create_file(ConcurrentLinkedList *list, File *file) {
  */
 char *read_file(ConcurrentLinkedList *list, File *file) {
   log_info("Performing READ %s", file->filename);
+
   char *payload;
   char *to_return = NOSUCHFILE;
   size_t len = getElementByID(list, (void *) &payload, file->filename );
 
-  if (len > 0) {
+  // Payload check for files with size 0 
+  if (len >= 0 || payload != NULL ) {
+    // + \000
     char len_c[SIZE_MAX_BUFLEN+1];
-    snprintf(len_c, SIZE_MAX_BUFLEN, "%d", len);
+
+    snprintf(len_c, SIZE_MAX_BUFLEN, "%zu", len);
 
     to_return = join_with_seperator(FILECONTENT, file->filename, " ");
     to_return = join_with_seperator(to_return, len_c," ");
@@ -277,18 +294,18 @@ char *handle_message(size_t msg_size, char *msg, ConcurrentLinkedList *file_list
   fsm->buflen = 0;
 
   
-#line 281 "lib/messageProcessing.c"
+#line 298 "lib/messageProcessing.c"
 	{
 	 fsm->cs = protocoll_start;
 	}
 
-#line 248 "lib/messageProcessing.rl"
+#line 265 "lib/messageProcessing.rl"
   log_debug("init done");
 
   char *p = msg;
   char *pe = p + msg_size;
   
-#line 292 "lib/messageProcessing.c"
+#line 309 "lib/messageProcessing.c"
 	{
 	int _klen;
 	unsigned int _trans;
@@ -443,7 +460,7 @@ _match:
 #line 106 "lib/messageProcessing.rl"
 	{ return create_file(file_list, &fsm->file); }
 	break;
-#line 447 "lib/messageProcessing.c"
+#line 464 "lib/messageProcessing.c"
 		}
 	}
 
@@ -456,7 +473,7 @@ _again:
 	_out: {}
 	}
 
-#line 253 "lib/messageProcessing.rl"
+#line 270 "lib/messageProcessing.rl"
   log_debug("exec done");
 
   // save  default
