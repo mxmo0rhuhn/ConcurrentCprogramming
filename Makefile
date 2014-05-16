@@ -15,14 +15,17 @@ clean:
 run: $(SERVER_FILE) lib/libtermpaper.a 
 	gcc $(CFLAGS) $(SERVER_FILE) $(LIBS) -o $(SERVER_OUT)
 
-test: $(CLIENT_FILE) lib/termPaperLib.o 
+test: $(CLIENT_FILE) lib/libtermpaper.a 
 	gcc $(CFLAGS) $(CLIENT_FILE) $(LIBS) -o $(CLIENT_OUT)
 
 # some module tests for the framework
 
-module_test: linked_list_test
+module_test: linked_list_test message_processing_test
 
-linked_list_test: test/linkedListTest.c lib/libtermpaper.a include/termPaperLib.h
+message_processing_test: test/messageProcessingTest.c lib/libtermpaper.a run
+	gcc $(CFLAGS) test/messageProcessingTest.c $(LIBS) -o test/messageProcessingTest.o
+
+linked_list_test: test/linkedListTest.c lib/libtermpaper.a 
 	gcc $(CFLAGS) test/linkedListTest.c $(LIBS) -o test/linkedListTest.o
 
 # shared libs
