@@ -20,13 +20,10 @@ run: $(SERVER_FILE) lib/libtermpaper.a
 
 # some module tests for the framework
 
-module_test: linked_list_test message_processing_test
+module_test: message_processing_test
 
 message_processing_test: test/messageProcessingTest.c lib/libtermpaper.a 
 	gcc $(CFLAGS) test/messageProcessingTest.c $(LIBS) -o test/messageProcessingTest.o
-
-linked_list_test: test/linkedListTest.c lib/libtermpaper.a 
-	gcc $(CFLAGS) test/linkedListTest.c $(LIBS) -o test/linkedListTest.o
 
 # shared libs
 
