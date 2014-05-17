@@ -79,22 +79,38 @@ void runTestcase(char *input, char *expected) {
 }
 
 void runTestcases() {
-//lens 
-//content with spaces 
 //filename with spaces 
+  runTestcase("CREATE im possible 3\n123\n", "COMMAND_UNKNOWN\n");
+  runTestcase("UPDATE im possible 3\n123\n", "COMMAND_UNKNOWN\n");
+  runTestcase("DELETE im possible 3\n123\n", "COMMAND_UNKNOWN\n");
+  runTestcase("READ im possible 3\n123\n", "COMMAND_UNKNOWN\n");
 
+  runTestcase("DELETE lol\n", "NOSUCHFILE\n");
   runTestcase("READ lol\n", "NOSUCHFILE\n");
   runTestcase("LIST\n", "ACK 0\n");
   runTestcase("CREATE lol 3\n123\n", "FILECREATED\n");
   runTestcase("CREATE lol 3\n472\n", "FILEEXISTS\n");
   runTestcase("READ lol\n", "FILECONTENT lol 3\n123\n");
   runTestcase("LIST\n", "ACK 1\nlol\n");
+  runTestcase("DELETE lol\n", "DELETED\n");
+  runTestcase("LIST\n", "ACK 0\n");
+  runTestcase("READ lol\n", "NOSUCHFILE\n");
+  runTestcase("DELETE lol\n", "NOSUCHFILE\n");
+  runTestcase("CREATE lol 3\n123\n", "FILECREATED\n");
+  runTestcase("LIST\n", "ACK 1\nlol\n");
+  runTestcase("READ lol\n", "FILECONTENT lol 3\n123\n");
   runTestcase("CREATE rofl 7\nasdifgj\n", "FILECREATED\n");
   runTestcase("READ lol\n", "FILECONTENT lol 3\n123\n");
   runTestcase("READ rofl\n", "FILECONTENT rofl 7\nasdifgj\n");
   runTestcase("LIST\n", "ACK 2\nlol\nrofl\n");
   runTestcase("CREATE hack1 0\nasdfgh\n", "COMMAND_UNKNOWN\n");
   runTestcase("LIST\n", "ACK 2\nlol\nrofl\n");
+  runTestcase("CREATE hack1 1\nasdfgh\n", "FILECREATED\n");
+  runTestcase("LIST\n", "ACK 3\nlol\nrofl\nhack1\n");
+  runTestcase("READ hack1\n", "FILECONTENT hack1 1\na\n");
+  runTestcase("DELETE hack1\n", "DELETED\n");
+  runTestcase("DELETE hack1\n", "NOSUCHFILE\n");
+  runTestcase("READ hack1\n", "NOSUCHFILE\n");
   runTestcase("CREATE hack1 1\nasdfgh\n", "FILECREATED\n");
   runTestcase("LIST\n", "ACK 3\nlol\nrofl\nhack1\n");
   runTestcase("READ hack1\n", "FILECONTENT hack1 1\na\n");
@@ -111,6 +127,56 @@ void runTestcases() {
   runTestcase("CREATE hack4 1337\nqqqqqqqq\n", "FILECREATED\n");
   runTestcase("LIST\n", "ACK 6\nlol\nrofl\nhack1\nhack3\nhack2\nhack4\n");
   runTestcase("READ hack4\n", "FILECONTENT hack4 8\nqqqqqqqq\n");
+  runTestcase("DELETE hack4\n", "DELETED\n");
+  runTestcase("LIST\n", "ACK 5\nlol\nrofl\nhack1\nhack3\nhack2\n");
+  runTestcase("DELETE hack4\n", "NOSUCHFILE\n");
+  runTestcase("LIST\n", "ACK 5\nlol\nrofl\nhack1\nhack3\nhack2\n");
+  runTestcase("CREATE anotherFile 10\n12erhl7d9k\n", "FILECREATED\n");
+  runTestcase("LIST\n", "ACK 6\nlol\nrofl\nhack1\nhack3\nhack2\nanotherFile\n");
+  runTestcase("READ anotherFile\n", "FILECONTENT anotherFile 8\n12erhl7d9k\n");
+  runTestcase("DELETE lol\n", "DELETED\n");
+  runTestcase("DELETE lol\n", "NOSUCHFILE\n");
+  runTestcase("READ rofl\n", "FILECONTENT rofl 7\nasdifgj\n");
+  runTestcase("LIST\n", "ACK 5\nrofl\nhack1\nhack3\nhack2\nanotherFile\n");
+  runTestcase("DELETE hack3\n", "DELETED\n");
+  runTestcase("DELETE hack3\n", "NOSUCHFILE\n");
+  runTestcase("LIST\n", "ACK 4\nrofl\nhack1\nhack2\nanotherFile\n");
+  runTestcase("READ anotherFile\n", "FILECONTENT anotherFile 8\n12erhl7d9k\n");
+  runTestcase("READ rofl\n", "FILECONTENT rofl 7\nasdifgj\n");
+  runTestcase("READ hack4\n", "NOSUCHFILE\n");
+  runTestcase("READ hack1\n", "FILECONTENT hack1 1\na\n");
+  runTestcase("READ hack2\n", "FILECONTENT hack2 1\n1\n");
+
+// UPDATE TESTS
+  runTestcase("UPDATE hack1 0\nasdfgh\n", "COMMAND_UNKNOWN\n");
+  runTestcase("READ hack1\n", "FILECONTENT hack1 1\na\n");
+  runTestcase("UPDATE hack1 1\nzzzzzzzz\n", "UPDATED\n");
+  runTestcase("READ hack1\n", "FILECONTENT hack1 1\nz\n");
+  runTestcase("UPDATE hack1 13371\n\n", "COMMAND_UNKNOWN\n");
+  runTestcase("READ hack1\n", "FILECONTENT hack1 1\nz\n");
+  runTestcase("UPDATE hack1 13371\nxy\n", "UPDATED\n");
+  runTestcase("READ hack1\n", "FILECONTENT hack1 2\nxy\n");
+  runTestcase("UPDATE hack1 3\nlkjh\n", "UPDATED\n");
+  runTestcase("READ hack1\n", "FILECONTENT hack1 3\nlkj\n");
+
+//content with spaces 
+  runTestcase("CREATE withSpaces 3\ni i\n", "FILECREATED\n");
+  runTestcase("READ withSpaces\n", "FILECONTENT withSpaces 3\ni i\n");
+  runTestcase("DELETE withSpaces\n", "DELETED\n");
+
+  runTestcase("READ rofl\n", "FILECONTENT rofl 7\nasdifgj\n");
+  runTestcase("READ hack4\n", "NOSUCHFILE\n");
+  runTestcase("READ hack2\n", "FILECONTENT hack2 1\n1\n");
+  runTestcase("LIST\n", "ACK 4\nrofl\nhack1\nhack2\nanotherFile\n");
+  runTestcase("DELETE anotherFile\n", "DELETED\n");
+  runTestcase("LIST\n", "ACK 3\nrofl\nhack1\nhack2\n");
+  runTestcase("DELETE hack1\n", "DELETED\n");
+  runTestcase("LIST\n", "ACK 2\nrofl\nhack2\n");
+  runTestcase("UPDATE hack1 3\nlkjh\n", "NOSUCHFILE\n");
+  runTestcase("DELETE rofl\n", "DELETED\n");
+  runTestcase("LIST\n", "ACK 1\nhack2\n");
+  runTestcase("DELETE hack2\n", "DELETED\n");
+  runTestcase("LIST\n", "ACK 0\n");
 }
 
 void usage(const char *argv0, const char *msg) {
