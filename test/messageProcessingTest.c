@@ -26,7 +26,6 @@
 #include <unistd.h>     
 
 #include <termPaperLib.h>
-#include <transmission-protocols.h>
 
 char *server_ip;
 unsigned short server_port;
@@ -79,12 +78,116 @@ void runTestcase(char *input, char *expected) {
   close(sock);
 }
 
+void create_real_long_String(size_t len, char **result, char c) {
+  char to_return[len];
+
+  int i; 
+  for(i = 0; i < len; i++) {
+    to_return[i] = c;
+  }
+  to_return[(len-1)] = '\000';
+
+  *result = (char *) malloc(len);
+  strncpy(*result, to_return, len);
+}
+
+void runFilencontentSizeTest(size_t in, size_t expected) {
+  char real_long_string[MAX_MSG_LEN + 10];
+  char real_long_string2[MAX_MSG_LEN + 10];
+  char *bad_string;
+  char *good_string;
+  create_real_long_String(in, &bad_string, 'c');
+  create_real_long_String(expected, &good_string, 'c');
+
+  sprintf(real_long_string,"CREATE blub %zu\n%s\n", in, bad_string);
+  runTestcase(real_long_string, "FILECREATED\n");
+
+  sprintf(real_long_string,"FILECONTENT blub %zu\n%s\n", expected, good_string);
+  runTestcase("READ blub\n", real_long_string);
+
+  runTestcase("LIST\n", "ACK 1\nblub\n");
+  
+  create_real_long_String(in, &bad_string, 'd');
+  create_real_long_String(expected, &good_string, 'd');
+  sprintf(real_long_string,"UPDATE blub %zu\n%s\n", in, bad_string);
+  runTestcase(real_long_string, "UPDATED\n");
+
+  sprintf(real_long_string,"READ %s\n", bad_string);
+  sprintf(real_long_string,"FILECONTENT %s %zu\n%s\n", expected, good_string);
+  runTestcase(real_long_string, real_long_string2);
+
+  runTestcase("LIST\n", "ACK 1\nblub\n");
+  
+  runTestcase("DELETE blub\n", "DELETED\n");
+
+  runTestcase("LIST\n", "ACK 0\n");
+}
+
+void runFilenameSizeTest(size_t in, size_t expected) {
+  char real_long_string[MAX_MSG_LEN + 10];
+  char real_long_string2[MAX_MSG_LEN + 10];
+  char *bad_string;
+  char *good_string;
+  create_real_long_String(in, &bad_string);
+  create_real_long_String(expected, &bad_string);
+
+  sprintf(real_long_string,"CREATE %s 3\n123\n", bad_string);
+  runTestcase(real_long_string, "FILECREATED\n");
+
+  sprintf(real_long_string,"READ %s\n", bad_string);
+  sprintf(real_long_string2,"FILECONTENT %s 3\n123\n", good_string);
+  runTestcase(real_long_string, real_long_string2);
+
+  sprintf(real_long_string,"ACK 1\n%s\n", good_string);
+  runTestcase("LIST\n", real_long_string);
+  
+  sprintf(real_long_string,"UPDATE %s 3\n567\n", bad_string);
+  runTestcase(real_long_string, "UPDATED\n");
+
+  sprintf(real_long_string,"READ %s\n", bad_string);
+  sprintf(real_long_string2,"FILECONTENT %s 3\n123\n", good_string);
+  runTestcase(real_long_string, real_long_string2);
+
+  sprintf(real_long_string,"ACK 1\n%s\n", good_string);
+  runTestcase("LIST\n", real_long_string);
+  
+  sprintf(real_long_string,"DELETE %s\n", bad_string);
+  runTestcase(real_long_string, "DELETED\n");
+
+  runTestcase("LIST\n", "ACK 0\n");
+}
+
 void runTestcases() {
-//filename with spaces 
+  char *bad_string ;
+
+// garbage 
+  runTestcase("Lorem Ipsum set dolo\n", "COMMAND_UNKNOWN\n");
+  runTestcase("qqqqqqqqqqqqqqqqqqqqqqqqq\n", "COMMAND_UNKNOWN\n");
+  runTestcase("Lorem Ipsum set dolo\n", "COMMAND_UNKNOWN\n");
+  create_real_long_String(2048, &bad_string);
+  runTestcase(bad_string, "COMMAND_UNKNOWN\n");
+  free(bad_string);
+  create_real_long_String(3072, &bad_string);
+  runTestcase(bad_string, "COMMAND_UNKNOWN\n");
+  free(bad_string);
+
+// messing arround with the lens
+  size_t len = MAX_BUFLEN;
+  void runFilenameSizeTest((MAX_BUFLEN-1) , (MAX_BUFLEN-1));
+  void runFilenameSizeTest(MAX_BUFLEN , MAX_BUFLEN);
+  void runFilenameSizeTest((MAX_BUFLEN+1) , (MAX_BUFLEN);
+
+// filename with spaces 
   runTestcase("CREATE im possible 3\n123\n", "COMMAND_UNKNOWN\n");
   runTestcase("UPDATE im possible 3\n123\n", "COMMAND_UNKNOWN\n");
   runTestcase("DELETE im possible 3\n123\n", "COMMAND_UNKNOWN\n");
   runTestcase("READ im possible 3\n123\n", "COMMAND_UNKNOWN\n");
+
+//content with spaces 
+  runTestcase("CREATE withSpaces 3\ni i\n", "COMMAND_UNKNOWN\n");
+  runTestcase("CREATE withSpaces 2\nii\n", "FILECREATED\n");
+  runTestcase("UPDATE withSpaces 3\n1 3\n", "COMMAND_UNKNOWN\n");
+  runTestcase("DELETE withSpaces\n", "DELETED\n");
 
   runTestcase("DELETE lol\n", "NOSUCHFILE\n");
   runTestcase("READ lol\n", "NOSUCHFILE\n");
@@ -159,11 +262,6 @@ void runTestcases() {
   runTestcase("READ hack1\n", "FILECONTENT hack1 2\nxy\n");
   runTestcase("UPDATE hack1 3\nlkjh\n", "UPDATED\n");
   runTestcase("READ hack1\n", "FILECONTENT hack1 3\nlkj\n");
-
-//content with spaces 
-  runTestcase("CREATE withSpaces 3\ni i\n", "FILECREATED\n");
-  runTestcase("READ withSpaces\n", "FILECONTENT withSpaces 3\ni i\n");
-  runTestcase("DELETE withSpaces\n", "DELETED\n");
 
   runTestcase("READ rofl\n", "FILECONTENT rofl 7\nasdifgj\n");
   runTestcase("READ hack4\n", "NOSUCHFILE\n");

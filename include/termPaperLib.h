@@ -29,6 +29,32 @@
 #define TRUE 1
 #define FALSE 0
 
+// -------------------------------------------------------------------
+// config 
+
+// max. size for FILENAME and CONTENT for security reasons 
+#define MAX_BUFLEN 1024
+
+// number of chars for the decimal representation of the MAX_BUFLEN 
+// (also the max lenght for the protocolls LENGTH argument)
+#define SIZE_MAX_BUFLEN 4
+
+// max. size for messages excluding FILENAME and CONTENT
+#define MAX_OTHER 10
+
+// max. len for any revived string, logged string or everything else
+// ATTENTION... may cause a lot of problems if to short
+// CONTENT + FILENAME + other stuff 
+#define MAX_MSG_LEN (MAX_BUFLEN + MAX_BUFLEN + MAX_OTHER)
+
+// max. number of waiting socket connections
+#define MAX_PENDING_CONNECTIONS 10
+
+// Frequency for the cleanup of finished request threads in seconds
+#define CLEANUP_FREQUENCY 10
+
+// -------------------------------------------------------------------
+
 enum exit_type { PROCESS_EXIT, THREAD_EXIT, NO_EXIT };
 
 /*
@@ -73,7 +99,7 @@ size_t read_and_store_string(int client_socket, char **result) ;
  * @param str string to be transmitted
  * @param len length of string to be transmitted
  */
-void write_string(int client_socket, char *str, size_t len) ;
+void write_string(int client_socket, const char *str, size_t len) ;
 
 /*
  * Joins two strings with a given seperator and returns the concatinated string

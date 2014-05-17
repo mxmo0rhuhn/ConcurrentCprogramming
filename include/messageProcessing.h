@@ -24,11 +24,6 @@
 
 #include <concurrentLinkedList.h>
 
-// max. size for FILENAME and CONTENT for security reasons 
-#define MAX_BUFLEN 1024
-// number of chars for the decimal representation of the MAX_BUFLEN
-#define SIZE_MAX_BUFLEN 4
-
 /**
  * Handle the given request on the given linked list
  */

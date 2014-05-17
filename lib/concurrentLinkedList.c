@@ -107,7 +107,8 @@ ConcurrentListElement *createElement(void **payload, size_t payload_size, char *
     new->usageMutex = mutex; 
     new->nextEntry = NULL;
 
-    size_t ID_len = strlen(ID);
+    // strlen + \000
+    size_t ID_len = strlen(ID) + 1;
     new->ID= malloc(ID_len);
     memcpy(new->ID, ID, ID_len);
 
@@ -393,6 +394,7 @@ size_t updateListElementByID(ConcurrentLinkedList *list, void **payload, size_t 
     free(elem->payload);
     elem->payload = malloc(payload_size);
     memcpy(elem->payload, *payload, payload_size);
+    elem->payload_size = payload_size;
     returnElement(elem);
     return_value = 0;
   } 

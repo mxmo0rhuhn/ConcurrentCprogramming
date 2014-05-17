@@ -40,120 +40,128 @@ struct protocoll {
 };
 
 
-#line 122 "lib/messageProcessing.rl"
+#line 125 "lib/messageProcessing.rl"
 
 
 
 #line 48 "lib/messageProcessing.c"
 static const char _protocoll_actions[] = {
 	0, 1, 0, 1, 2, 1, 3, 1, 
-	4, 1, 5, 1, 7, 2, 1, 10, 
-	2, 1, 11, 2, 3, 8, 2, 3, 
-	9, 2, 6, 0, 2, 6, 2, 2, 
-	6, 4
+	4, 1, 5, 1, 7, 1, 12, 2, 
+	1, 10, 2, 1, 11, 2, 3, 8, 
+	2, 3, 9, 2, 6, 0, 2, 6, 
+	2, 2, 6, 4
 };
 
 static const char _protocoll_key_offsets[] = {
-	0, 0, 5, 6, 7, 8, 9, 10, 
-	11, 17, 24, 26, 29, 35, 42, 43, 
-	44, 45, 46, 47, 48, 54, 61, 62, 
-	63, 64, 65, 66, 67, 68, 69, 75, 
-	82, 83, 84, 85, 86, 87, 88, 94, 
-	101, 103, 106, 112, 119
+	0, 0, 5, 7, 8, 9, 10, 11, 
+	12, 18, 25, 27, 30, 36, 43, 44, 
+	45, 46, 47, 48, 49, 50, 51, 52, 
+	53, 59, 66, 67, 68, 69, 70, 71, 
+	72, 73, 74, 80, 87, 88, 89, 90, 
+	91, 92, 93, 99, 106, 108, 111, 117, 
+	124
 };
 
 static const char _protocoll_trans_keys[] = {
-	67, 68, 76, 82, 85, 82, 69, 65, 
-	84, 69, 32, 48, 57, 65, 90, 97, 
-	122, 32, 48, 57, 65, 90, 97, 122, 
-	48, 57, 10, 48, 57, 48, 57, 65, 
+	67, 68, 76, 82, 85, 82, 100, 69, 
+	65, 84, 69, 32, 48, 57, 65, 90, 
+	97, 122, 32, 48, 57, 65, 90, 97, 
+	122, 48, 57, 10, 48, 57, 48, 57, 
+	65, 90, 97, 122, 10, 48, 57, 65, 
+	90, 97, 122, 105, 115, 116, 10, 69, 
+	76, 69, 84, 69, 32, 48, 57, 65, 
 	90, 97, 122, 10, 48, 57, 65, 90, 
-	97, 122, 69, 76, 69, 84, 69, 32, 
-	48, 57, 65, 90, 97, 122, 10, 48, 
-	57, 65, 90, 97, 122, 73, 83, 84, 
-	10, 69, 65, 68, 32, 48, 57, 65, 
-	90, 97, 122, 10, 48, 57, 65, 90, 
-	97, 122, 80, 68, 65, 84, 69, 32, 
-	48, 57, 65, 90, 97, 122, 32, 48, 
-	57, 65, 90, 97, 122, 48, 57, 10, 
-	48, 57, 48, 57, 65, 90, 97, 122, 
-	10, 48, 57, 65, 90, 97, 122, 0
+	97, 122, 73, 83, 84, 10, 69, 65, 
+	68, 32, 48, 57, 65, 90, 97, 122, 
+	10, 48, 57, 65, 90, 97, 122, 80, 
+	68, 65, 84, 69, 32, 48, 57, 65, 
+	90, 97, 122, 32, 48, 57, 65, 90, 
+	97, 122, 48, 57, 10, 48, 57, 48, 
+	57, 65, 90, 97, 122, 10, 48, 57, 
+	65, 90, 97, 122, 0
 };
 
 static const char _protocoll_single_lengths[] = {
-	0, 5, 1, 1, 1, 1, 1, 1, 
+	0, 5, 2, 1, 1, 1, 1, 1, 
 	0, 1, 0, 1, 0, 1, 1, 1, 
-	1, 1, 1, 1, 0, 1, 1, 1, 
-	1, 1, 1, 1, 1, 1, 0, 1, 
-	1, 1, 1, 1, 1, 1, 0, 1, 
-	0, 1, 0, 1, 0
+	1, 1, 1, 1, 1, 1, 1, 1, 
+	0, 1, 1, 1, 1, 1, 1, 1, 
+	1, 1, 0, 1, 1, 1, 1, 1, 
+	1, 1, 0, 1, 0, 1, 0, 1, 
+	0
 };
 
 static const char _protocoll_range_lengths[] = {
 	0, 0, 0, 0, 0, 0, 0, 0, 
 	3, 3, 1, 1, 3, 3, 0, 0, 
-	0, 0, 0, 0, 3, 3, 0, 0, 
-	0, 0, 0, 0, 0, 0, 3, 3, 
-	0, 0, 0, 0, 0, 0, 3, 3, 
-	1, 1, 3, 3, 0
+	0, 0, 0, 0, 0, 0, 0, 0, 
+	3, 3, 0, 0, 0, 0, 0, 0, 
+	0, 0, 3, 3, 0, 0, 0, 0, 
+	0, 0, 3, 3, 1, 1, 3, 3, 
+	0
 };
 
 static const unsigned char _protocoll_index_offsets[] = {
-	0, 0, 6, 8, 10, 12, 14, 16, 
-	18, 22, 27, 29, 32, 36, 41, 43, 
-	45, 47, 49, 51, 53, 57, 62, 64, 
-	66, 68, 70, 72, 74, 76, 78, 82, 
-	87, 89, 91, 93, 95, 97, 99, 103, 
-	108, 110, 113, 117, 122
+	0, 0, 6, 9, 11, 13, 15, 17, 
+	19, 23, 28, 30, 33, 37, 42, 44, 
+	46, 48, 50, 52, 54, 56, 58, 60, 
+	62, 66, 71, 73, 75, 77, 79, 81, 
+	83, 85, 87, 91, 96, 98, 100, 102, 
+	104, 106, 108, 112, 117, 119, 122, 126, 
+	131
 };
 
 static const char _protocoll_indicies[] = {
-	0, 2, 3, 4, 5, 1, 6, 1, 
-	7, 1, 8, 1, 9, 1, 10, 1, 
-	11, 1, 12, 12, 12, 1, 13, 14, 
-	14, 14, 1, 15, 1, 16, 17, 1, 
-	18, 18, 18, 1, 19, 20, 20, 20, 
-	1, 21, 1, 22, 1, 23, 1, 24, 
-	1, 25, 1, 26, 1, 27, 27, 27, 
-	1, 28, 29, 29, 29, 1, 30, 1, 
-	31, 1, 32, 1, 33, 1, 34, 1, 
-	35, 1, 36, 1, 37, 1, 38, 38, 
-	38, 1, 39, 40, 40, 40, 1, 41, 
-	1, 42, 1, 43, 1, 44, 1, 45, 
-	1, 46, 1, 47, 47, 47, 1, 48, 
-	49, 49, 49, 1, 50, 1, 51, 52, 
-	1, 53, 53, 53, 1, 54, 55, 55, 
-	55, 1, 1, 0
+	0, 2, 3, 4, 5, 1, 6, 7, 
+	1, 8, 1, 9, 1, 10, 1, 11, 
+	1, 12, 1, 13, 13, 13, 1, 14, 
+	15, 15, 15, 1, 16, 1, 17, 18, 
+	1, 19, 19, 19, 1, 20, 21, 21, 
+	21, 1, 22, 1, 23, 1, 24, 1, 
+	25, 1, 26, 1, 27, 1, 28, 1, 
+	29, 1, 30, 1, 31, 1, 32, 32, 
+	32, 1, 33, 34, 34, 34, 1, 35, 
+	1, 36, 1, 37, 1, 38, 1, 39, 
+	1, 40, 1, 41, 1, 42, 1, 43, 
+	43, 43, 1, 44, 45, 45, 45, 1, 
+	46, 1, 47, 1, 48, 1, 49, 1, 
+	50, 1, 51, 1, 52, 52, 52, 1, 
+	53, 54, 54, 54, 1, 55, 1, 56, 
+	57, 1, 58, 58, 58, 1, 59, 60, 
+	60, 60, 1, 1, 0
 };
 
 static const char _protocoll_trans_targs[] = {
-	2, 0, 14, 22, 26, 32, 3, 4, 
-	5, 6, 7, 8, 9, 10, 9, 11, 
-	12, 11, 13, 44, 13, 15, 16, 17, 
-	18, 19, 20, 21, 44, 21, 23, 24, 
-	25, 44, 27, 28, 29, 30, 31, 44, 
-	31, 33, 34, 35, 36, 37, 38, 39, 
-	40, 39, 41, 42, 41, 43, 44, 43
+	2, 0, 18, 26, 30, 36, 3, 14, 
+	4, 5, 6, 7, 8, 9, 10, 9, 
+	11, 12, 11, 13, 48, 13, 15, 16, 
+	17, 48, 19, 20, 21, 22, 23, 24, 
+	25, 48, 25, 27, 28, 29, 48, 31, 
+	32, 33, 34, 35, 48, 35, 37, 38, 
+	39, 40, 41, 42, 43, 44, 43, 45, 
+	46, 45, 47, 48, 47
 };
 
 static const char _protocoll_trans_actions[] = {
 	0, 0, 0, 0, 0, 0, 0, 0, 
-	0, 0, 0, 0, 28, 5, 3, 31, 
-	9, 7, 25, 16, 1, 0, 0, 0, 
-	0, 0, 0, 28, 22, 3, 0, 0, 
-	0, 11, 0, 0, 0, 0, 28, 19, 
-	3, 0, 0, 0, 0, 0, 0, 28, 
-	5, 3, 31, 9, 7, 25, 13, 1
+	0, 0, 0, 0, 0, 30, 5, 3, 
+	33, 9, 7, 27, 18, 1, 0, 0, 
+	0, 13, 0, 0, 0, 0, 0, 0, 
+	30, 24, 3, 0, 0, 0, 11, 0, 
+	0, 0, 0, 30, 21, 3, 0, 0, 
+	0, 0, 0, 0, 30, 5, 3, 33, 
+	9, 7, 27, 15, 1
 };
 
 static const int protocoll_start = 1;
-static const int protocoll_first_final = 44;
+static const int protocoll_first_final = 48;
 static const int protocoll_error = 0;
 
 static const int protocoll_en_main = 1;
 
 
-#line 125 "lib/messageProcessing.rl"
+#line 128 "lib/messageProcessing.rl"
 
 // Responses
 // Errors
@@ -186,7 +194,7 @@ size_t validate_size(char *len, char *content) {
   if(payload_size < 1) {
     return 0;
   }
-  
+
   // due to input parsing this should never happen
   if(content_size > MAX_BUFLEN) {
     return 0;
@@ -245,7 +253,7 @@ char *create_file(ConcurrentLinkedList *list, File *file) {
     return COMMAND_UNKNOWN;
   }
 
-  log_info("Performing CREATE %s, %zu", file->filename, payload_size);
+  log_info("Performing CREATE %s, %zu", file->filename, (payload_size));
   log_info("Content: %s", file->content);
 
   payload_size = (payload_size) * sizeof(unsigned char);
@@ -306,7 +314,7 @@ char *update_file(ConcurrentLinkedList *list, File *file) {
     return COMMAND_UNKNOWN;
   }
 
-  log_info("Performing UPDATE %s, %zu", file->filename, payload_size);
+  log_info("Performing UPDATE %s, %zu", file->filename, (payload_size));
   log_info("Content: %s", file->content);
 
   payload_size = (payload_size) * sizeof(unsigned char);
@@ -349,18 +357,18 @@ char *handle_message(size_t msg_size, char *msg, ConcurrentLinkedList *file_list
   fsm->buflen = 0;
 
   
-#line 353 "lib/messageProcessing.c"
+#line 361 "lib/messageProcessing.c"
 	{
 	 fsm->cs = protocoll_start;
 	}
 
-#line 320 "lib/messageProcessing.rl"
+#line 323 "lib/messageProcessing.rl"
   log_debug("init done");
 
   char *p = msg;
   char *pe = p + msg_size;
   
-#line 364 "lib/messageProcessing.c"
+#line 372 "lib/messageProcessing.c"
 	{
 	int _klen;
 	unsigned int _trans;
@@ -437,63 +445,63 @@ _match:
 	case 0:
 #line 48 "lib/messageProcessing.rl"
 	{
-      if ( fsm->buflen < MAX_BUFLEN ) {
-        log_debug("content buffer + %c", (*p));
-        fsm->file.content[fsm->buflen++] = (*p);
-      }
+    if ( fsm->buflen < MAX_BUFLEN ) {
+      log_debug("content buffer + %c", (*p));
+      fsm->file.content[fsm->buflen++] = (*p);
     }
+  }
 	break;
 	case 1:
 #line 54 "lib/messageProcessing.rl"
 	{
-      if ( fsm->buflen < MAX_BUFLEN ) {
-        log_debug("content buffer finished");
-        fsm->file.content[fsm->buflen++] = '\000';
-      }
+    if ( fsm->buflen < MAX_BUFLEN ) {
+      log_debug("content buffer finished");
+      fsm->file.content[fsm->buflen++] = '\000';
     }
+  }
 	break;
 	case 2:
 #line 62 "lib/messageProcessing.rl"
 	{
-      if ( fsm->buflen < MAX_BUFLEN ) {
-        log_debug("filename buffer + %c", (*p));
-        fsm->file.filename[fsm->buflen++] = (*p);
-      }
+    if ( fsm->buflen < MAX_BUFLEN ) {
+      log_debug("filename buffer + %c", (*p));
+      fsm->file.filename[fsm->buflen++] = (*p);
     }
+  }
 	break;
 	case 3:
 #line 68 "lib/messageProcessing.rl"
 	{
-      if ( fsm->buflen < MAX_BUFLEN ) {
-        log_debug("filename buffer finished");
-        fsm->file.filename[fsm->buflen++] = '\000';
-      }
+    if ( fsm->buflen < MAX_BUFLEN ) {
+      log_debug("filename buffer finished");
+      fsm->file.filename[fsm->buflen++] = '\000';
     }
+  }
 	break;
 	case 4:
 #line 76 "lib/messageProcessing.rl"
 	{
-      if ( fsm->buflen < MAX_BUFLEN ) {
-        log_debug("len buffer + %c", (*p));
-        fsm->file.length[fsm->buflen++] = (*p);
-      }
+    if ( fsm->buflen < MAX_BUFLEN ) {
+      log_debug("len buffer + %c", (*p));
+      fsm->file.length[fsm->buflen++] = (*p);
     }
+  }
 	break;
 	case 5:
 #line 82 "lib/messageProcessing.rl"
 	{
-      if ( fsm->buflen < MAX_BUFLEN ) {
-        log_debug("len buffer finished");
-        fsm->file.length[fsm->buflen++] = '\000';
-      }
+    if ( fsm->buflen < MAX_BUFLEN ) {
+      log_debug("len buffer finished");
+      fsm->file.length[fsm->buflen++] = '\000';
     }
+  }
 	break;
 	case 6:
 #line 90 "lib/messageProcessing.rl"
 	{ 
-      log_debug("new buffer prepared");
-      fsm->buflen = 0; 
-    }
+    log_debug("new buffer prepared");
+    fsm->buflen = 0; 
+  }
 	break;
 	case 7:
 #line 102 "lib/messageProcessing.rl"
@@ -515,7 +523,11 @@ _match:
 #line 106 "lib/messageProcessing.rl"
 	{ return create_file(file_list, &fsm->file); }
 	break;
-#line 519 "lib/messageProcessing.c"
+	case 12:
+#line 113 "lib/messageProcessing.rl"
+	{ return "FTW ;-)\n"; }
+	break;
+#line 531 "lib/messageProcessing.c"
 		}
 	}
 
@@ -528,7 +540,7 @@ _again:
 	_out: {}
 	}
 
-#line 325 "lib/messageProcessing.rl"
+#line 328 "lib/messageProcessing.rl"
   log_debug("exec done");
 
   // save  default

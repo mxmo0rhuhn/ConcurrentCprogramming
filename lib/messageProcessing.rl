@@ -42,80 +42,83 @@ struct protocoll {
   machine protocoll;
 
 # get the struct
-    access fsm->;
+  access fsm->;
 
 # Append the current character to the content buffer
-    action append_content {
-      if ( fsm->buflen < MAX_BUFLEN ) {
-        log_debug("content buffer + %c", fc);
-        fsm->file.content[fsm->buflen++] = fc;
-      }
+  action append_content {
+    if ( fsm->buflen < MAX_BUFLEN ) {
+      log_debug("content buffer + %c", fc);
+      fsm->file.content[fsm->buflen++] = fc;
     }
-    action term_content {
-      if ( fsm->buflen < MAX_BUFLEN ) {
-        log_debug("content buffer finished");
-        fsm->file.content[fsm->buflen++] = '\000';
-      }
+  }
+  action term_content {
+    if ( fsm->buflen <= MAX_BUFLEN ) {
+      log_debug("content buffer finished");
+      fsm->file.content[fsm->buflen++] = '\000';
     }
+  }
 
 # Append the current character to the filename buffer
-    action append_filename {
-      if ( fsm->buflen < MAX_BUFLEN ) {
-        log_debug("filename buffer + %c", fc);
-        fsm->file.filename[fsm->buflen++] = fc;
-      }
+  action append_filename {
+    if ( fsm->buflen < MAX_BUFLEN ) {
+      log_debug("filename buffer + %c", fc);
+      fsm->file.filename[fsm->buflen++] = fc;
     }
-    action term_filename {
-      if ( fsm->buflen < MAX_BUFLEN ) {
-        log_debug("filename buffer finished");
-        fsm->file.filename[fsm->buflen++] = '\000';
-      }
+  }
+  action term_filename {
+    if ( fsm->buflen <= MAX_BUFLEN ) {
+      log_debug("filename buffer finished");
+      fsm->file.filename[fsm->buflen++] = '\000';
     }
+  }
 
 # Append the current character to the length buffer
-    action append_length {
-      if ( fsm->buflen < MAX_BUFLEN ) {
-        log_debug("len buffer + %c", fc);
-        fsm->file.length[fsm->buflen++] = fc;
-      }
+  action append_length {
+    if ( fsm->buflen < SIZE_MAX_BUFLEN ) {
+      log_debug("len buffer + %c", fc);
+      fsm->file.length[fsm->buflen++] = fc;
     }
-    action term_length {
-      if ( fsm->buflen < MAX_BUFLEN ) {
-        log_debug("len buffer finished");
-        fsm->file.length[fsm->buflen++] = '\000';
-      }
+  }
+  action term_length {
+    if ( fsm->buflen <= SIZE_MAX_BUFLEN ) {
+      log_debug("len buffer finished");
+      fsm->file.length[fsm->buflen++] = '\000';
     }
+  }
 
 # prepare for a new buffer
-    action init { 
-      log_debug("new buffer prepared");
-      fsm->buflen = 0; 
-    }
+  action init { 
+    log_debug("new buffer prepared");
+    fsm->buflen = 0; 
+  }
 
 
 # Helpers that collect strings
-    length = digit+ >init $append_length %term_length;
-    filename = alnum+ >init $append_filename %term_filename;
-    content = alnum+ >init $append_content %term_content;
+  length = digit+ >init $append_length %term_length;
+  filename = alnum+ >init $append_filename %term_filename;
+  content = alnum+ >init $append_content %term_content;
 
 # action definitions
-    action list { return list_files(file_list); }
-    action read { return read_file(file_list, &fsm->file); }
-    action delete { return delete_file(file_list, &fsm->file); }
-    action update { return update_file(file_list, &fsm->file); }
-    action create { return create_file(file_list, &fsm->file); }
+  action list { return list_files(file_list); }
+  action read { return read_file(file_list, &fsm->file); }
+  action delete { return delete_file(file_list, &fsm->file); }
+  action update { return update_file(file_list, &fsm->file); }
+  action create { return create_file(file_list, &fsm->file); }
 
 # Machine definition
-    list = 'LIST\n'  @list;
-    read = 'READ ' . filename . '\n' @read;
-    delete = 'DELETE ' . filename . '\n' @delete;
-    update = 'UPDATE ' . filename . ' ' length . '\n' content . '\n' @update;
-    create = 'CREATE ' . filename . ' ' length . '\n' content . '\n' @create;
+  list = 'LIST\n'  @list;
+  read = 'READ ' . filename . '\n' @read;
+  delete = 'DELETE ' . filename . '\n' @delete;
+# small instructor test ... will anyone ever see this?
+  special = 'Cdist\n' @{ return "FTW ;-)\n"; };
+  update = 'UPDATE ' . filename . ' ' . length . '\n' content . '\n' @update;
+  create = 'CREATE ' . filename . ' ' . length . '\n' content . '\n' @create;
 
 main := ( 
           list | 
           read | 
           update |
+          special |
           delete |
           create
         );
@@ -154,19 +157,19 @@ size_t validate_size(char *len, char *content) {
   if(payload_size < 1) {
     return 0;
   }
-  
+
   // due to input parsing this should never happen
   if(content_size > MAX_BUFLEN) {
     return 0;
   }
 
+  if (payload_size > content_size) {
+    payload_size = content_size;
+  }
+
   //ignore len if > MAX_BUFLEN
   if(payload_size > MAX_BUFLEN) {
     payload_size = MAX_BUFLEN;
-  }
-
-  if (payload_size > content_size) {
-    payload_size = content_size;
   }
 
   return payload_size;
@@ -213,7 +216,7 @@ char *create_file(ConcurrentLinkedList *list, File *file) {
     return COMMAND_UNKNOWN;
   }
 
-  log_info("Performing CREATE %s, %zu", file->filename, payload_size);
+  log_info("Performing CREATE %s, %zu", file->filename, (payload_size));
   log_info("Content: %s", file->content);
 
   payload_size = (payload_size) * sizeof(unsigned char);
@@ -274,7 +277,7 @@ char *update_file(ConcurrentLinkedList *list, File *file) {
     return COMMAND_UNKNOWN;
   }
 
-  log_info("Performing UPDATE %s, %zu", file->filename, payload_size);
+  log_info("Performing UPDATE %s, %zu", file->filename, (payload_size));
   log_info("Content: %s", file->content);
 
   payload_size = (payload_size) * sizeof(unsigned char);

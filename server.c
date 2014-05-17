@@ -29,10 +29,6 @@
 #include <concurrentLinkedList.h>
 #include <messageProcessing.h>
 
-// config 
-#define MAX_PENDING_CONNECTIONS 10
-#define CLEANUP_FREQUENCY 10
-
 // all informations that are needed to handle requests
 typedef struct payload {
   pthread_t *thread;

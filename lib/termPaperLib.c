@@ -36,7 +36,8 @@
 #include <termPaperLib.h>
 
 void log_info(const char *msg, ...) {
-  char logLine[1024];
+  // this len is a real vulnerability => keep it long
+  char logLine[MAX_MSG_LEN+MAX_BUFLEN];
   va_list argptr;
   va_start(argptr, msg);
   vsprintf(logLine, msg, argptr);
@@ -45,7 +46,8 @@ void log_info(const char *msg, ...) {
 }
 
 void log_debug(const char *msg, ...) {
-  char logLine[1024];
+  // this len is a real vulnerability => keep it long
+  char logLine[MAX_MSG_LEN+MAX_BUFLEN];
   va_list argptr;
   va_start(argptr, msg);
   vsprintf(logLine, msg, argptr);
@@ -54,7 +56,8 @@ void log_debug(const char *msg, ...) {
 }
 
 void log_error(const char *msg, ...) {
-  char logLine[1024];
+  // this len is a real vulnerability => keep it long
+  char logLine[MAX_MSG_LEN+MAX_BUFLEN];
   va_list argptr;
   va_start(argptr, msg);
   vsprintf(logLine, msg, argptr);
@@ -63,7 +66,6 @@ void log_error(const char *msg, ...) {
 }
 
 void exit_by_type(enum exit_type et) {
-  char error_msg[1024] ; 
   switch (et) {
     case PROCESS_EXIT: 
       exit(1);
@@ -75,8 +77,7 @@ void exit_by_type(enum exit_type et) {
       log_info("continuing");
       break;
     default:
-      sprintf(error_msg, "unknown exit_type=%d", et);
-      log_error(error_msg);
+      log_error("unknown exit_type=%d", et);
       exit(2);
       break;
   }
@@ -89,14 +90,12 @@ void handle_error_myerrno(long return_code, int myerrno,
     const char *msg, enum exit_type et) {
   if (return_code < 0) {
     const char *error_str = strerror(myerrno);
-    char error_msg[2048];
 
     if (msg != NULL) {
       log_error(msg);
     } 
-    sprintf(error_msg, "return_code=%ld\nerrno=%d\nmessage=%s\n", 
+    log_error("return_code=%ld\nerrno=%d\nmessage=%s\n", 
         return_code, myerrno, error_str);
-    log_error(error_msg);
 
     exit_by_type(et);
   }
@@ -145,59 +144,34 @@ int is_help_requested(int argc, char *argv[]) {
 }
 
 size_t read_and_store_string(int client_socket, char **result) {
-  uint32_t ulen_net = 0;
-  size_t bytes_received = recv(client_socket, &ulen_net, sizeof(ulen_net), 0);
-  handle_error(bytes_received, "Recive msg from client", THREAD_EXIT);
 
-  if (bytes_received != sizeof(ulen_net)) {
-    handle_error(bytes_received, "Recive msg from client", THREAD_EXIT);
+  // CONTENT + FILENAME + other stuff 
+  size_t message_max_len = MAX_MSG_LEN;
+  char buffer[message_max_len+1];
+  size_t bytes_received = 0;
+
+  /* Receive up to the read_len bytes from the sender */
+  bytes_received = read(client_socket, buffer, message_max_len);
+  if (bytes_received <= 0) {
     log_error("recv() failed or connection closed prematurely");
     exit_by_type(THREAD_EXIT);
   }
-
-  uint32_t ulen = ntohl(ulen_net);
-  if (ulen == 0) {
-    *result = (char *) "";
-    return ulen;
-  }
-  char *buffer = (char *) malloc(ulen + 1);
-  buffer[ulen] = '\000';
-  char *ptr = buffer;
-  size_t rest_len = ulen;
-  while (rest_len > 0) {
-    /* Receive up to the read_len bytes from the sender */
-    bytes_received = read(client_socket, ptr, rest_len);
-    if (bytes_received <= 0) {
-      log_error("recv() failed or connection closed prematurely");
-      exit_by_type(THREAD_EXIT);
-    }
-    rest_len -= bytes_received;
-    ptr += bytes_received;
-  }
-  *result = buffer;
-  return ulen;
+  //bad people may send strings that are not \000 terminated
+  buffer[bytes_received] = '\000';
+  *result = (char *) malloc(bytes_received+1);
+  strncpy(*result, buffer, bytes_received+1);
+  return bytes_received ;
 }
 
-void write_string(int client_socket, char *str, size_t len) {
+void write_string(int client_socket, const char *str, size_t len) {
   if (len == -1) {
     len = strlen(str);
   }
-  uint32_t ulen = (uint32_t) len;
-  if (ulen != len) {
-    handle_error_myerrno(-1, EFBIG, "string too long", THREAD_EXIT);
-  }
-  uint32_t ulen_net = htonl(ulen);
 
-  int retcode = write(client_socket, &ulen_net, sizeof(ulen_net));
-  handle_error(retcode, "Send message to client", THREAD_EXIT);
-
-  char *ptr = str;
-  size_t rest_len = len;
-
-  while (rest_len > 0) {
-    size_t partial_len = write(client_socket, ptr, rest_len);
-    rest_len -= partial_len;
-    ptr += partial_len;
+  size_t partial_len = write(client_socket, str, len);
+  if (partial_len != len) {
+    log_error("Send message to client failed");
+    exit_by_type(THREAD_EXIT);
   }
 }
   
