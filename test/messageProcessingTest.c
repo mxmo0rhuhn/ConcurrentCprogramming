@@ -53,6 +53,7 @@ void runTestcase(char *input, char *expected) {
 //  log_debug("Sendling: '%s'\n", input);
   write_string(sock, input, -1);
 
+  sleep(1);
   char *buffer_ptr[0];
 
   size_t received_msg_size = read_and_store_string(sock, buffer_ptr);
@@ -72,7 +73,6 @@ void runTestcase(char *input, char *expected) {
     
     num_testcases_fail++;  
   }
-
   free(*buffer_ptr);
 
   close(sock);
@@ -89,22 +89,28 @@ void runTestcases() {
   runTestcase("CREATE lol 3\n472\n", "FILEEXISTS\n");
   runTestcase("READ lol\n", "FILECONTENT lol 3\n123\n");
   runTestcase("LIST\n", "ACK 1\nlol\n");
-  runTestcase("CREATE rofl 7\nasdfgh\n", "FILECREATED\n");
+  runTestcase("CREATE rofl 7\nasdifgj\n", "FILECREATED\n");
   runTestcase("READ lol\n", "FILECONTENT lol 3\n123\n");
-  runTestcase("READ rofl\n", "FILECONTENT rofl 7\nasdfgh\n");
+  runTestcase("READ rofl\n", "FILECONTENT rofl 7\nasdifgj\n");
   runTestcase("LIST\n", "ACK 2\nlol\nrofl\n");
-  runTestcase("CREATE hack1 0\nasdfgh\n", "FILECREATED\n");
+  runTestcase("CREATE hack1 0\nasdfgh\n", "COMMAND_UNKNOWN\n");
+  runTestcase("LIST\n", "ACK 2\nlol\nrofl\n");
+  runTestcase("CREATE hack1 1\nasdfgh\n", "FILECREATED\n");
   runTestcase("LIST\n", "ACK 3\nlol\nrofl\nhack1\n");
-  runTestcase("READ hack1\n", "FILECONTENT hack1 0\n\n");
-  runTestcase("CREATE hack3 0\nJ\n", "FILECREATED\n");
+  runTestcase("READ hack1\n", "FILECONTENT hack1 1\na\n");
+  runTestcase("CREATE hack3 0\n\n", "COMMAND_UNKNOWN\n");
+  runTestcase("LIST\n", "ACK 3\nlol\nrofl\nhack1\n");
+  runTestcase("CREATE hack3 3\n1\n", "FILECREATED\n");
   runTestcase("LIST\n", "ACK 4\nlol\nrofl\nhack1\nhack3\n");
-  runTestcase("READ hack3\n", "FILECONTENT hack3 0\n\n");
-  runTestcase("CREATE hack2 1337\n\n", "FILECREATED\n");
+  runTestcase("READ hack3\n", "FILECONTENT hack3 1\n1\n");
+  runTestcase("CREATE hack2 1337\n\n", "COMMAND_UNKNOWN\n");
+  runTestcase("READ hack2\n", "NOSUCHFILE\n");
+  runTestcase("CREATE hack2 1337\n1\n", "FILECREATED\n");
   runTestcase("LIST\n", "ACK 5\nlol\nrofl\nhack1\nhack3\nhack2\n");
-  runTestcase("READ hack2\n", "FILECONTENT hack2 1337\n\n");
+  runTestcase("READ hack2\n", "FILECONTENT hack2 1\n1\n");
   runTestcase("CREATE hack4 1337\nqqqqqqqq\n", "FILECREATED\n");
   runTestcase("LIST\n", "ACK 6\nlol\nrofl\nhack1\nhack3\nhack2\nhack4\n");
-  runTestcase("READ hack4\n", "FILECONTENT hack4 1337\nqqqqqqqq\n");
+  runTestcase("READ hack4\n", "FILECONTENT hack4 8\nqqqqqqqq\n");
 }
 
 void usage(const char *argv0, const char *msg) {

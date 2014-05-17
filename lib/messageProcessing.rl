@@ -136,6 +136,42 @@ main := (
 #define DELETED "DELETED\n"
 #define UPDATED "UPDATED\n"
 
+/**
+ * Since many bad people try to cause SigV ...
+ */
+size_t validate_size(char *len, char *content) {
+
+  size_t payload_size = atoi(len);
+  size_t content_size = strlen(content);
+
+  // due to input parsing this should never happen
+  if(content_size < 1) {
+    return 0;
+  }
+
+  // Files with empty content are not specified as possible by the protocoll
+  // (there has always to be a content... if size = 0 sth. is wrong)
+  if(payload_size < 1) {
+    return 0;
+  }
+  
+  // due to input parsing this should never happen
+  if(content_size > MAX_BUFLEN) {
+    return 0;
+  }
+
+  //ignore len if > MAX_BUFLEN
+  if(payload_size > MAX_BUFLEN) {
+    payload_size = MAX_BUFLEN;
+  }
+
+  if (payload_size > content_size) {
+    payload_size = content_size;
+  }
+
+  return payload_size;
+}
+
 /*
  * List all files
  * Possible response:
@@ -171,11 +207,10 @@ char *list_files(ConcurrentLinkedList *list) {
  */
 char *create_file(ConcurrentLinkedList *list, File *file) {
   char *to_return = FILECREATED;
-  size_t payload_size = atoi(file->length);
 
-  //ignore len if > MAX_BUFLEN
-  if(payload_size > MAX_BUFLEN) {
-    payload_size = MAX_BUFLEN;
+  size_t payload_size = validate_size(file->length, file->content);
+  if (payload_size < 1) {
+    return COMMAND_UNKNOWN;
   }
 
   log_info("Performing CREATE %s, %zu", file->filename, payload_size);
@@ -208,7 +243,7 @@ char *read_file(ConcurrentLinkedList *list, File *file) {
   size_t len = getElementByID(list, (void *) &payload, file->filename );
 
   // Payload check for files with size 0 
-  if (len >= 0 || payload != NULL ) {
+  if (len > 0 ) {
     // + \000
     char len_c[SIZE_MAX_BUFLEN+1];
 

@@ -168,6 +168,42 @@ static const int protocoll_en_main = 1;
 #define DELETED "DELETED\n"
 #define UPDATED "UPDATED\n"
 
+/**
+ * Since many bad people try to cause SigV ...
+ */
+size_t validate_size(char *len, char *content) {
+
+  size_t payload_size = atoi(len);
+  size_t content_size = strlen(content);
+
+  // due to input parsing this should never happen
+  if(content_size < 1) {
+    return 0;
+  }
+
+  // Files with empty content are not specified as possible by the protocoll
+  // (there has always to be a content... if size = 0 sth. is wrong)
+  if(payload_size < 1) {
+    return 0;
+  }
+  
+  // due to input parsing this should never happen
+  if(content_size > MAX_BUFLEN) {
+    return 0;
+  }
+
+  //ignore len if > MAX_BUFLEN
+  if(payload_size > MAX_BUFLEN) {
+    payload_size = MAX_BUFLEN;
+  }
+
+  if (payload_size > content_size) {
+    payload_size = content_size;
+  }
+
+  return payload_size;
+}
+
 /*
  * List all files
  * Possible response:
@@ -203,11 +239,10 @@ char *list_files(ConcurrentLinkedList *list) {
  */
 char *create_file(ConcurrentLinkedList *list, File *file) {
   char *to_return = FILECREATED;
-  size_t payload_size = atoi(file->length);
 
-  //ignore len if > MAX_BUFLEN
-  if(payload_size > MAX_BUFLEN) {
-    payload_size = MAX_BUFLEN;
+  size_t payload_size = validate_size(file->length, file->content);
+  if (payload_size < 1) {
+    return COMMAND_UNKNOWN;
   }
 
   log_info("Performing CREATE %s, %zu", file->filename, payload_size);
@@ -240,7 +275,7 @@ char *read_file(ConcurrentLinkedList *list, File *file) {
   size_t len = getElementByID(list, (void *) &payload, file->filename );
 
   // Payload check for files with size 0 
-  if (len >= 0 || payload != NULL ) {
+  if (len > 0 ) {
     // + \000
     char len_c[SIZE_MAX_BUFLEN+1];
 
@@ -294,18 +329,18 @@ char *handle_message(size_t msg_size, char *msg, ConcurrentLinkedList *file_list
   fsm->buflen = 0;
 
   
-#line 298 "lib/messageProcessing.c"
+#line 333 "lib/messageProcessing.c"
 	{
 	 fsm->cs = protocoll_start;
 	}
 
-#line 265 "lib/messageProcessing.rl"
+#line 300 "lib/messageProcessing.rl"
   log_debug("init done");
 
   char *p = msg;
   char *pe = p + msg_size;
   
-#line 309 "lib/messageProcessing.c"
+#line 344 "lib/messageProcessing.c"
 	{
 	int _klen;
 	unsigned int _trans;
@@ -460,7 +495,7 @@ _match:
 #line 106 "lib/messageProcessing.rl"
 	{ return create_file(file_list, &fsm->file); }
 	break;
-#line 464 "lib/messageProcessing.c"
+#line 499 "lib/messageProcessing.c"
 		}
 	}
 
@@ -473,7 +508,7 @@ _again:
 	_out: {}
 	}
 
-#line 270 "lib/messageProcessing.rl"
+#line 305 "lib/messageProcessing.rl"
   log_debug("exec done");
 
   // save  default
