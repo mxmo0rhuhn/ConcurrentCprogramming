@@ -45,7 +45,7 @@
 // max. len for any revived string, logged string or everything else
 // ATTENTION... may cause a lot of problems if to short
 // CONTENT + FILENAME + other stuff 
-#define MAX_MSG_LEN (MAX_BUFLEN + MAX_BUFLEN + MAX_OTHER)
+#define MAX_MSG_LEN (MAX_BUFLEN + MAX_BUFLEN + SIZE_MAX_BUFLEN + MAX_OTHER)
 
 // max. number of waiting socket connections
 #define MAX_PENDING_CONNECTIONS 10

@@ -1,6 +1,5 @@
 #!/bin/bash
 make clean
 make ragel
-make module_test
-make
+make all
 ./server.out 7000 

@@ -61,7 +61,7 @@ void *handleRequest(void *input) {
   long threadID =(long) pthread_self();
   Payload *payload = ( Payload* ) input;
 
-  log_info("Thread %ld: Hello - handling client %s", threadID
+  log_debug("Thread %ld: Hello - handling client %s", threadID
       , inet_ntoa(payload->client_address.sin_addr));
 
   char *buffer_ptr[0];
@@ -69,7 +69,7 @@ void *handleRequest(void *input) {
   // Receive command from client 
   size_t received_msg_size = read_and_store_string(payload->socket, buffer_ptr);
   handle_error(received_msg_size, "recive failed", THREAD_EXIT);
-  log_info("Thread %ld: Recived: '%s'", threadID, *buffer_ptr);
+  log_debug("Thread %ld: Recived: '%s'", threadID, *buffer_ptr);
 
   char *return_msg = handle_message(received_msg_size, *buffer_ptr, payload->file_list);
 
@@ -80,7 +80,7 @@ void *handleRequest(void *input) {
   close(payload->socket);    
   free(*buffer_ptr);
 
-  log_info("Thread %ld: Bye Bye", threadID );  
+  log_debug("Thread %ld: Bye Bye", threadID );  
   return NULL;
 }
 
@@ -134,7 +134,7 @@ void *createSocketListener(void *input) {
     appendListElement(listenerPayload->threadList,(void *) &nextListEntry, sizeof(Payload), "NoName");
   }
   // Should never happen!
-  log_info("Thread %ld: Bye Bye from Socket Listener - ERROR!", threadID );  
+  log_error("Thread %ld: Bye Bye from Socket Listener - ERROR!", threadID );  
   return (void *) -1;
 }
 
@@ -154,7 +154,7 @@ void *cleanUpSocketListener(void *input) {
 
     // gives back the shallow copy of the element
     while(getFirstListElement(threadList, (void *)&firstElementAsPayload) > 1){ 
-      log_info("Cleanup Thread: Removing Thread");
+      log_debug("Cleanup Thread: Removing Thread");
 
       log_debug("about to join: %p", firstElementAsPayload->thread);
       retcode = pthread_join(*(firstElementAsPayload->thread), NULL);

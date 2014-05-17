@@ -47,13 +47,11 @@ struct protocoll {
 # Append the current character to the content buffer
   action append_content {
     if ( fsm->buflen < MAX_BUFLEN ) {
-      log_debug("content buffer + %c", fc);
       fsm->file.content[fsm->buflen++] = fc;
     }
   }
   action term_content {
     if ( fsm->buflen <= MAX_BUFLEN ) {
-      log_debug("content buffer finished");
       fsm->file.content[fsm->buflen++] = '\000';
     }
   }
@@ -61,13 +59,11 @@ struct protocoll {
 # Append the current character to the filename buffer
   action append_filename {
     if ( fsm->buflen < MAX_BUFLEN ) {
-      log_debug("filename buffer + %c", fc);
       fsm->file.filename[fsm->buflen++] = fc;
     }
   }
   action term_filename {
     if ( fsm->buflen <= MAX_BUFLEN ) {
-      log_debug("filename buffer finished");
       fsm->file.filename[fsm->buflen++] = '\000';
     }
   }
@@ -75,23 +71,19 @@ struct protocoll {
 # Append the current character to the length buffer
   action append_length {
     if ( fsm->buflen < SIZE_MAX_BUFLEN ) {
-      log_debug("len buffer + %c", fc);
       fsm->file.length[fsm->buflen++] = fc;
     }
   }
   action term_length {
     if ( fsm->buflen <= SIZE_MAX_BUFLEN ) {
-      log_debug("len buffer finished");
       fsm->file.length[fsm->buflen++] = '\000';
     }
   }
 
 # prepare for a new buffer
   action init { 
-    log_debug("new buffer prepared");
     fsm->buflen = 0; 
   }
-
 
 # Helpers that collect strings
   length = digit+ >init $append_length %term_length;
@@ -155,15 +147,18 @@ size_t validate_size(char *len, char *content) {
   // Files with empty content are not specified as possible by the protocoll
   // (there has always to be a content... if size = 0 sth. is wrong)
   if(payload_size < 1) {
+    log_error("content len (%zu) < 1", payload_size);
     return 0;
   }
 
   // due to input parsing this should never happen
   if(content_size > MAX_BUFLEN) {
+    log_error("content len (%zu) > MAX_BUFLEN (%zu)",content_size, MAX_BUFLEN);
     return 0;
   }
 
   if (payload_size > content_size) {
+    log_info("LENGTH > strlen(CONTENT). Adjusting LENGTH");
     payload_size = content_size;
   }
 
@@ -217,7 +212,15 @@ char *create_file(ConcurrentLinkedList *list, File *file) {
   }
 
   log_info("Performing CREATE %s, %zu", file->filename, (payload_size));
+  log_debug("len Filename: %zu", strlen(file->filename));
   log_info("Content: %s", file->content);
+  log_debug("len Content: %zu", strlen(file->content));
+
+  // save string with \000
+  if(strlen(file->content) > payload_size) {
+    file->content[payload_size] = '\000';
+  }
+  payload_size++;
 
   payload_size = (payload_size) * sizeof(unsigned char);
   char *content = file->content;
@@ -243,15 +246,23 @@ char *read_file(ConcurrentLinkedList *list, File *file) {
 
   char *payload;
   char *to_return = NOSUCHFILE;
-  size_t len = getElementByID(list, (void *) &payload, file->filename );
+  size_t payload_size = getElementByID(list, (void *) &payload, file->filename );
 
   // Payload check for files with size 0 
-  if (len > 0 ) {
+  if (payload_size > 0 ) {
     // + \000
     char len_c[SIZE_MAX_BUFLEN+1];
+  
+    // return LENGTH without \000
+    payload_size--;
+    snprintf(len_c, (SIZE_MAX_BUFLEN +1), "%zu", payload_size);
 
-    snprintf(len_c, SIZE_MAX_BUFLEN, "%zu", len);
+    if(payload_size != strlen(payload)) {
+      log_error("Sth. went total wrong!");
+      log_error("len= %zu, strlen= %zu", payload_size, strlen(payload));
+    }
 
+    log_debug("strlen filename = %zu", strlen(file->filename));
     to_return = join_with_seperator(FILECONTENT, file->filename, " ");
     to_return = join_with_seperator(to_return, len_c," ");
     to_return = join_with_seperator(to_return, payload,"\n");
@@ -279,6 +290,12 @@ char *update_file(ConcurrentLinkedList *list, File *file) {
 
   log_info("Performing UPDATE %s, %zu", file->filename, (payload_size));
   log_info("Content: %s", file->content);
+
+  // save string with \000
+  if(strlen(file->content) > payload_size) {
+    file->content[payload_size] = '\000';
+  }
+  payload_size++;
 
   payload_size = (payload_size) * sizeof(unsigned char);
   char *content = file->content;
@@ -312,20 +329,15 @@ char *delete_file(ConcurrentLinkedList *list, File *file) {
 
 char *handle_message(size_t msg_size, char *msg, ConcurrentLinkedList *file_list) {
 
-  log_debug("handle_message got msg %s", msg);
-  log_debug("handle_message got len %d", msg_size);
-
   struct protocoll protocoll;
   struct protocoll *fsm = &protocoll;
   fsm->buflen = 0;
 
   %% write init;
-  log_debug("init done");
 
   char *p = msg;
   char *pe = p + msg_size;
   %% write exec;
-  log_debug("exec done");
 
   // save  default
   log_error( "Command unknown: '%s'", msg);

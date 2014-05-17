@@ -7,22 +7,22 @@ CLIENT_FILE=client.c
 SERVER_OUT=server.out
 CLIENT_OUT=client.out
 
-all: run test 
+all: test run 
 
 clean:
 	rm lib/*.a lib/*.o test/*.o $(CLIENT_OUT) $(SERVER_OUT) 
 
-run: $(SERVER_FILE) lib/libtermpaper.a 
-	gcc $(CFLAGS) $(SERVER_FILE) $(LIBS) -o $(SERVER_OUT)
-
 test: $(CLIENT_FILE) lib/libtermpaper.a 
 	gcc $(CFLAGS) $(CLIENT_FILE) $(LIBS) -o $(CLIENT_OUT)
+
+run: $(SERVER_FILE) lib/libtermpaper.a 
+	gcc $(CFLAGS) $(SERVER_FILE) $(LIBS) -o $(SERVER_OUT)
 
 # some module tests for the framework
 
 module_test: linked_list_test message_processing_test
 
-message_processing_test: test/messageProcessingTest.c lib/libtermpaper.a run
+message_processing_test: test/messageProcessingTest.c lib/libtermpaper.a 
 	gcc $(CFLAGS) test/messageProcessingTest.c $(LIBS) -o test/messageProcessingTest.o
 
 linked_list_test: test/linkedListTest.c lib/libtermpaper.a 
