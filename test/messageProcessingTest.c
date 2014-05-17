@@ -53,6 +53,7 @@ void runTestcase(char *input, char *expected) {
 //  log_debug("Sendling: '%s'\n", input);
   write_string(sock, input, -1);
 
+  // sleep since the requests went to fast and randomly crashed
   sleep(1);
   char *buffer_ptr[0];
 
@@ -133,7 +134,7 @@ void runTestcases() {
   runTestcase("LIST\n", "ACK 5\nlol\nrofl\nhack1\nhack3\nhack2\n");
   runTestcase("CREATE anotherFile 10\n12erhl7d9k\n", "FILECREATED\n");
   runTestcase("LIST\n", "ACK 6\nlol\nrofl\nhack1\nhack3\nhack2\nanotherFile\n");
-  runTestcase("READ anotherFile\n", "FILECONTENT anotherFile 8\n12erhl7d9k\n");
+  runTestcase("READ anotherFile\n", "FILECONTENT anotherFile 10\n12erhl7d9k\n");
   runTestcase("DELETE lol\n", "DELETED\n");
   runTestcase("DELETE lol\n", "NOSUCHFILE\n");
   runTestcase("READ rofl\n", "FILECONTENT rofl 7\nasdifgj\n");
@@ -141,7 +142,7 @@ void runTestcases() {
   runTestcase("DELETE hack3\n", "DELETED\n");
   runTestcase("DELETE hack3\n", "NOSUCHFILE\n");
   runTestcase("LIST\n", "ACK 4\nrofl\nhack1\nhack2\nanotherFile\n");
-  runTestcase("READ anotherFile\n", "FILECONTENT anotherFile 8\n12erhl7d9k\n");
+  runTestcase("READ anotherFile\n", "FILECONTENT anotherFile 10\n12erhl7d9k\n");
   runTestcase("READ rofl\n", "FILECONTENT rofl 7\nasdifgj\n");
   runTestcase("READ hack4\n", "NOSUCHFILE\n");
   runTestcase("READ hack1\n", "FILECONTENT hack1 1\na\n");

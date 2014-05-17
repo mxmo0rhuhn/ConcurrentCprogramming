@@ -186,7 +186,7 @@ char *list_files(ConcurrentLinkedList *list) {
   char len_c[SIZE_MAX_BUFLEN+1];
   char *files;
 
-  size_t len = getAllElemmentIDs(list, &files);
+  size_t len = getAllElementIDs(list, &files);
 
   snprintf(len_c, SIZE_MAX_BUFLEN, "%zu", len);
 
@@ -266,11 +266,25 @@ char *read_file(ConcurrentLinkedList *list, File *file) {
  *      UPDATED\n
  */
 char *update_file(ConcurrentLinkedList *list, File *file) {
-  log_info("Performing UPDATE %s", file->filename);
 
-  //ignore len if > MAX_BUFLEN
+  char *to_return = UPDATED;
 
-  return UPDATED;
+  size_t payload_size = validate_size(file->length, file->content);
+  if (payload_size < 1) {
+    return COMMAND_UNKNOWN;
+  }
+
+  log_info("Performing UPDATE %s, %zu", file->filename, payload_size);
+  log_info("Content: %s", file->content);
+
+  payload_size = (payload_size) * sizeof(unsigned char);
+  char *content = file->content;
+
+  if(0 != updateListElementByID(list, (void *) &content, payload_size, (file->filename))) {
+    to_return = NOSUCHFILE;
+  } 
+
+  return to_return;
 }
 
 /*
@@ -283,8 +297,14 @@ char *update_file(ConcurrentLinkedList *list, File *file) {
  */
 char *delete_file(ConcurrentLinkedList *list, File *file) {
   log_info("Performing DELETE %s", file->filename);
-  
-  return DELETED;
+
+  char *to_return = DELETED;
+
+  if(0 != removeListElementByID(list, (file->filename))) {
+    to_return = NOSUCHFILE;
+  } 
+
+  return to_return;
 }
 
 char *handle_message(size_t msg_size, char *msg, ConcurrentLinkedList *file_list) {

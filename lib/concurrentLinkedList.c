@@ -198,7 +198,7 @@ size_t getFirstListElement(ConcurrentLinkedList *list, void **payload) {
   return payload_size;
 }
 
-size_t getAllElemmentIDs(ConcurrentLinkedList *list, char **IDs) {
+size_t getAllElementIDs(ConcurrentLinkedList *list, char **IDs) {
 
   size_t num_elem = 0;
   char *buffer = "\000";
@@ -342,3 +342,60 @@ int appendUniqueListElement(ConcurrentLinkedList *list, void **payload,
   return return_value;
 }
 
+size_t removeListElementByID(ConcurrentLinkedList *list, char *ID) {
+  int return_value = 1;
+
+  ConcurrentListElement *elem;
+  ConcurrentListElement *predecessor;
+  elem = useElementByID(list, &predecessor, ID) ;
+
+  if (elem != NULL) {
+    ConcurrentListElement *next = removeElement(elem);
+    if (elem != NULL) {
+      if(predecessor != NULL){
+        predecessor->nextEntry = next;
+      } else {
+        list->firstElement = next;
+      }
+    }
+    return_value = 0;
+  }
+
+  if(predecessor != NULL){
+    returnElement(predecessor);
+  } else {
+    returnFirstElement(list);
+  }
+
+  return return_value;
+}
+
+size_t updateListElementByID(ConcurrentLinkedList *list, void **payload, size_t payload_size, char *ID) {
+  int return_value = 1;
+  ConcurrentListElement *elem;
+  ConcurrentListElement *predecessor;
+
+  elem = useElementByID(list, &predecessor, ID) ;
+
+  if (elem != NULL) {
+    useElement(elem);
+  }
+
+  // Return other elements asap
+  if(predecessor != NULL){
+    returnElement(predecessor);
+  } else {
+    returnFirstElement(list);
+  }
+
+  if (elem != NULL) {
+
+    free(elem->payload);
+    elem->payload = malloc(payload_size);
+    memcpy(elem->payload, *payload, payload_size);
+    returnElement(elem);
+    return_value = 0;
+  } 
+
+  return return_value;
+}

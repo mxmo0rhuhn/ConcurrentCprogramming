@@ -61,7 +61,6 @@ void appendListElement(ConcurrentLinkedList *list, void **payload,
 int appendUniqueListElement(ConcurrentLinkedList *list, void **payload, 
                        size_t payload_size, char* ID) ;
 
-
 /*
  * Returns a shallow copy of the first element!
  * ATTENTION: This will not secure the integrity of the target of pointers
@@ -71,20 +70,31 @@ int appendUniqueListElement(ConcurrentLinkedList *list, void **payload,
 size_t getFirstListElement(ConcurrentLinkedList *list, void **payload);
 
 /**
- * Removes the first element of the List - if existing
- */
-void removeFirstListElement(ConcurrentLinkedList *list);
-
-/**
- * Returnes a \n seperated list of element IDs
- */
-size_t getAllElemmentIDs(ConcurrentLinkedList *list, char **IDs);
-
-/**
  * ATTENTION: This will not secure the integrity of the target of pointers
  *            in the payload of the element!
  * The copy has to be freed by caller
  * Returns a shallow copy of a element 
  */
 size_t getElementByID(ConcurrentLinkedList *list, void **payload, char *ID);
+
+/**
+ * Removes the first element of the List - if existing
+ */
+void removeFirstListElement(ConcurrentLinkedList *list);
+
+/** 
+ * Removes a specific element - if existing - from the list
+ */
+size_t removeListElementByID(ConcurrentLinkedList *list, char *ID);
+
+/**
+ * Returnes a \n seperated list of element IDs
+ */
+size_t getAllElementIDs(ConcurrentLinkedList *list, char **IDs);
+
+/** 
+ * Changes the payload of the first element found with the given ID
+ */
+size_t updateListElementByID(ConcurrentLinkedList *list, void **payload, size_t payload_size, char *ID);
+
 #endif
