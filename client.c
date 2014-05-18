@@ -31,14 +31,26 @@ void usage(const char *argv0, const char *msg) {
   if (msg != NULL && strlen(msg) > 0) {
     printf("%s\n\n", msg);
   }
-  printf("Usage\n\n");
-  printf("%s <Server IP> [-c Command] [-p Port]\n", argv0);
-  printf("Connects to the Server and provides an interactive multiline Commandline\n");
-  printf("You may also provide a certain command that is to be executed with -c\n");
+  printf("Usage:\n");
+  printf("%s <Server IP> [-c Line1] [-C Line2] [-p Port]\n", argv0);
+  printf("<Server IP> Mandatory: Tries to connect to a server with the given IP\n");
+  printf("[-c Line1] Optional: A command that should be send to the server.\n");
+  printf("                     This option disables the interactive mode\n");
+  printf("[-C Line2] Optional: A second line for the command - only possible\n");
+  printf("                     if a first line is provided\n");
+  printf("[-P Port] Optional: Tries to connect to a server on the given port.\n");
+  printf("          Default: 7000\n\n");
+
+  printf("Connects to a server and provides an interactive multiline command\n");
+  printf("interface. You can simply start a new line with \\n (Enter)\n");
+  printf("The command will be send to the server as soon as a empty line is\n");
+  printf("entered. The interactive interface can be ended using <Ctrl-C> \n");
+  printf("or by entering QUIT\n\n");
+  printf("You may also provide a command that is executed without an interactive\n");
+  printf("command interface using the [-c Line] option\n");
   printf("If you want to specify a second line that is send to the server after\n");
-  printf("-c you can use -C \n");
-  printf("If you want to specify a special port use -p \n");
-  printf("End with Ctrl-C or QUIT\n");
+  printf("-c you can use -C \n\n");
+  printf("(c) Max Schrimpf - ZHAW 2014\n");
   exit(1);
 }
 
@@ -46,7 +58,7 @@ int main(int argc, char *argv[]) {
 
   int retcode;
   if (is_help_requested(argc, argv)) {
-    usage(argv[0], "");
+    usage(argv[0], "Help:");
   }
 
   if (argc < 2 ) {  

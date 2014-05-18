@@ -1,3 +1,9 @@
+// TODO Concurrency tests
+// TODO Logging Config
+//      - Central method and help text generator
+// TODO Diffrent Locks for Content and everything else
+// TODO Beautification
+
 /* 
  * This file is part of the concurrent programming in C term paper
  *
@@ -44,15 +50,18 @@ typedef struct listenerPayload {
 } ListenerPayload;
 
 void usage(char *programName, char *msg) {
-  printf("%s\n\n", msg);
-  printf("Usage:\n\n");
+  if (msg != NULL && strlen(msg) > 0) {
+    printf("%s\n\n", msg);
+  }
+  printf("Usage:\n");
 
-  printf("%s [port] -[sort protocoll] [file] \n", programName);
-  printf("[port] starts a server listening on the given port\n");
+  printf("%s <port> \n", programName);
+  printf("<port> Mandatory: Starts the server listening on the given port\n\n");
 
   printf("Server for the term paper in concurrent C programming\n");
   printf("Will start a virtual file server that accepts connections via\n");
-  printf("TCP\n");
+  printf("TCP\n\n");
+  printf("(c) Max Schrimpf - ZHAW 2014\n");
 
   exit(1);
 }

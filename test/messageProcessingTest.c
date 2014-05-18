@@ -344,9 +344,15 @@ void usage(const char *argv0, const char *msg) {
   if (msg != NULL && strlen(msg) > 0) {
     printf("%s\n\n", msg);
   }
-  printf("Usage\n\n");
+  printf("Usage:\n");
   printf("%s <Server IP> [-p Port]\n", argv0);
+  printf("<Server IP> Mandatory: Tries to connect to a server with the given IP\n");
+  printf("[-P Port] Optional: Tries to connect to a server on the given port.\n");
+  printf("          Default: 7000\n\n");
+
   printf("Executes various tests on the fileserver\n");
+  printf("A running server at the given address is needed\n\n");
+  printf("(c) Max Schrimpf - ZHAW 2014\n");
   exit(1);
 }
 
@@ -354,7 +360,7 @@ int main(int argc, char *argv[]) {
 
   int retcode;
   if (is_help_requested(argc, argv)) {
-    usage(argv[0], "");
+    usage(argv[0], "Help:");
   }
 
   if (argc < 2 ) {  
