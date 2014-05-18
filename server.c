@@ -156,11 +156,13 @@ void *cleanUpSocketListener(void *input) {
   log_debug("ConcurrentLinkedList: %p", threadList);
   Payload *firstElementAsPayload; 
 
+  int num = 0;
   while (TRUE) { 
     sleep(CLEANUP_FREQUENCY);
     log_info("Cleanup Thread: Start Removing Threads");
     log_debug("First Element Copy = %p", firstElementAsPayload);
 
+    num = 0;
     // gives back the shallow copy of the element
     while(getFirstListElement(threadList, (void *)&firstElementAsPayload) > 1){ 
       log_debug("Cleanup Thread: Removing Thread");
@@ -176,8 +178,10 @@ void *cleanUpSocketListener(void *input) {
       free(firstElementAsPayload);
 
       removeFirstListElement(threadList);
+      num++;
     }
     log_info("Cleanup Thread: Done Removing Threads");
+    log_info("Removed %d Threads", num);
   }
   // Should never happen!
   log_error("Thread %ld: Bye Bye from Cleanup Thread - ERROR!", threadID );  

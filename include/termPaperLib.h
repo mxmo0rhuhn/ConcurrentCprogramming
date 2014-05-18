@@ -32,37 +32,51 @@
 // -------------------------------------------------------------------
 // config 
 
-// max. size for FILENAME and CONTENT for security reasons 
+// max. lenght for FILENAME and CONTENT 
+// (has to be limited for security reasons)
 #define MAX_BUFLEN 1024
 
-// number of chars for the decimal representation of the MAX_BUFLEN 
-// (also the max lenght for the protocolls LENGTH argument)
+// max. lenght for the decimal representation of MAX_BUFLEN 
+// (=> max. lenght for the protocolls LENGTH argument)
 #define SIZE_MAX_BUFLEN 4
 
-// max. size for messages excluding FILENAME and CONTENT
-#define MAX_OTHER 10
+// max. lenght of characters other than FILENAME, CONTENT or LENGTH in 
+// the protokoll
+// Longest message: FILECONTENT FILENAME LENGTH\nCONTENT\n
+#define MAX_OTHER 15
 
-// max. len for any revived string, logged string or everything else
-// ATTENTION... may cause a lot of problems if to short
-// CONTENT + FILENAME + other stuff 
+// max. lenght for any revived or logged string 
+// ATTENTION... may cause a LOT of problems if it is to short
 #define MAX_MSG_LEN (MAX_BUFLEN + MAX_BUFLEN + SIZE_MAX_BUFLEN + MAX_OTHER)
 
 // max. number of waiting socket connections
-#define MAX_PENDING_CONNECTIONS 10
+#define MAX_PENDING_CONNECTIONS 100
 
-// Frequency for the cleanup of finished request threads in seconds
+// frequency for finished request cleanup in seconds
 #define CLEANUP_FREQUENCY 10
 
 // -------------------------------------------------------------------
 
 enum exit_type { PROCESS_EXIT, THREAD_EXIT, NO_EXIT };
+enum logging_type { NONE, WRITE_TO_FILE, WRITE_TO_STDOUT, WRITE_TO_STDERR };
 
 /*
  * Logging functions for messages
+ * on different levels
  */
 void log_debug(const char *msg, ...) ;
 void log_info(const char *msg, ...) ;
 void log_error(const char *msg, ...) ;
+
+/**
+ * Parses the commandline parameters for logging properties
+ **/
+int get_logging_properties(int argc, char *argv[]);
+
+/**
+ * returns a help text for the possible logging options
+ **/
+char *get_logging_help();
 
 /* 
  * check if --help or similar is indicated 
