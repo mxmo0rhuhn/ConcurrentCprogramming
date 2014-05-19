@@ -228,16 +228,16 @@ char *create_file(ConcurrentLinkedList *list, File *file) {
     return COMMAND_UNKNOWN;
   }
 
-  log_info("Performing CREATE %s, %zu", file->filename, (payload_size));
+  char *content = file->content;
+
+  log_info("Performing CREATE %s %zu", file->filename, (payload_size));
   log_debug("len Filename: %zu", strlen(file->filename));
-  log_info("Content: %s", file->content);
-  log_debug("len Content: %zu", strlen(file->content));
+  log_info("Content: %s", content);
+  log_debug("len Content: %zu", strlen(content));
 
   // save string with \000
   payload_size++;
 
-  payload_size = (payload_size) * sizeof(unsigned char);
-  char *content = file->content;
 
   if(0 != appendUniqueListElement(list, (void *) &content, payload_size, (file->filename))) {
     to_return = FILEEXISTS;
@@ -297,12 +297,12 @@ char *update_file(ConcurrentLinkedList *list, File *file) {
     return COMMAND_UNKNOWN;
   }
 
+  char *content = file->content;
   log_info("Performing UPDATE %s, %zu", file->filename, (payload_size));
-  log_info("Content: %s", file->content);
+  log_info("Content: %s", content);
 
   // save string with \000
   payload_size++;
-  char *content = file->content;
 
   if(0 != updateListElementByID(list, (void *) &content, payload_size, (file->filename))) {
     to_return = NOSUCHFILE;
