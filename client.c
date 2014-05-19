@@ -163,6 +163,7 @@ int main(int argc, char *argv[]) {
     log_debug("Sendling: '%s'\n", send);
     write_string(sock, send, -1);
 
+    sleep(1);
     char *buffer_ptr[0];
 
     // Receive command from server 

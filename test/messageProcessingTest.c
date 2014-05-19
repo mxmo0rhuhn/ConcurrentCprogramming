@@ -52,6 +52,7 @@ void runTestcase(const char *input, const char *expected) {
   write_string(sock, input, -1);
 
   // sleep since the requests went to fast and randomly crashed
+  sleep(1);
   char *buffer_ptr[0];
 
   size_t received_msg_size = read_and_store_string(sock, buffer_ptr);
@@ -63,10 +64,10 @@ void runTestcase(const char *input, const char *expected) {
     log_info("Testcase %zu: OK!", num_testcases);
     num_testcases_success++;  
   } else {
-    log_error("Testcase %zu: FAILED!", num_testcases);
-    log_error("send: '%s'", input);
-    log_error("Expected: '%s'", expected);
-    log_error("Recived : '%s'", *buffer_ptr);
+    log_info("Testcase %zu: FAILED!", num_testcases);
+    log_debug("send: '%s'", input);
+    log_debug("Expected: '%s'", expected);
+    log_debug("Recived : '%s'", *buffer_ptr);
     
     num_testcases_fail++;  
   }
@@ -264,12 +265,47 @@ void runTestcases() {
   runTestcase("DELETE im possible 3\n123\n", "COMMAND_UNKNOWN\n");
   runTestcase("READ im possible 3\n123\n", "COMMAND_UNKNOWN\n");
 
+// filename with spaces 
+  log_debug("---------------------------------------------------");
+  log_debug("filenames with special chars with spaces");
+  runTestcase("CREATE im possible 3\n123\n", "COMMAND_UNKNOWN\n");
+  runTestcase("UPDATE im possible 3\n123\n", "COMMAND_UNKNOWN\n");
+  runTestcase("DELETE im possible 3\n123\n", "COMMAND_UNKNOWN\n");
+  runTestcase("READ im possible 3\n123\n", "COMMAND_UNKNOWN\n");
+
 //content with spaces 
   log_debug("---------------------------------------------------");
   log_debug("content with spaces");
-  runTestcase("CREATE withSpaces 3\ni i\n", "COMMAND_UNKNOWN\n");
-  runTestcase("CREATE withSpaces 2\nii\n", "FILECREATED\n");
-  runTestcase("UPDATE withSpaces 3\n1 3\n", "COMMAND_UNKNOWN\n");
+  runTestcase("CREATE withSpaces 3\ni i\n", "FILECREATED\n");
+  runTestcase("LIST\n", "ACK 1\nwithSpaces\n");
+  runTestcase("READ withSpaces\n", "FILECONTENT withSpaces 3\ni i\n");
+  runTestcase("UPDATE withSpaces 3\n1 3\n", "UPDATED\n");
+  runTestcase("LIST\n", "ACK 1\nwithSpaces\n");
+  runTestcase("READ withSpaces\n", "FILECONTENT withSpaces 3\n1 3\n");
+  runTestcase("DELETE withSpaces\n", "DELETED\n");
+
+  runTestcase("CREATE withSpaces 3\n   \n", "FILECREATED\n");
+  runTestcase("LIST\n", "ACK 1\nwithSpaces\n");
+  runTestcase("READ withSpaces\n", "FILECONTENT withSpaces 3\n   \n");
+  runTestcase("UPDATE withSpaces 3\n  3\n", "UPDATED\n");
+  runTestcase("LIST\n", "ACK 1\nwithSpaces\n");
+  runTestcase("READ withSpaces\n", "FILECONTENT withSpaces 3\n  3\n");
+  runTestcase("DELETE withSpaces\n", "DELETED\n");
+
+  runTestcase("CREATE withSpaces 3\n  3\n", "FILECREATED\n");
+  runTestcase("LIST\n", "ACK 1\nwithSpaces\n");
+  runTestcase("READ withSpaces\n", "FILECONTENT withSpaces 3\n  3\n");
+  runTestcase("UPDATE withSpaces 3\n   \n", "UPDATED\n");
+  runTestcase("LIST\n", "ACK 1\nwithSpaces\n");
+  runTestcase("READ withSpaces\n", "FILECONTENT withSpaces 3\n   \n");
+  runTestcase("DELETE withSpaces\n", "DELETED\n");
+
+  runTestcase("CREATE withSpaces 3\nr  \n", "FILECREATED\n");
+  runTestcase("LIST\n", "ACK 1\nwithSpaces\n");
+  runTestcase("READ withSpaces\n", "FILECONTENT withSpaces 3\nr  \n");
+  runTestcase("UPDATE withSpaces 3\nd  \n", "UPDATED\n");
+  runTestcase("LIST\n", "ACK 1\nwithSpaces\n");
+  runTestcase("READ withSpaces\n", "FILECONTENT withSpaces 3\nd  \n");
   runTestcase("DELETE withSpaces\n", "DELETED\n");
 
 // messing arround with the lens
