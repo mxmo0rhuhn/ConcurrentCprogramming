@@ -27,6 +27,24 @@
 #include <string.h>
 #include <stdio.h>
 
+// Responses
+// Errors
+#define FILEEXISTS "FILEEXISTS\n"
+#define NOSUCHFILE "NOSUCHFILE\n"
+
+// Not used in the protocol
+#define COMMAND_UNKNOWN "COMMAND_UNKNOWN\n"
+#define FILENAME_TO_LONG "FILENAME_TO_LONG\n"
+#define CONTENT_TO_LONG "CONTENT_TO_LONG\n"
+
+// positive responses
+#define ACK "ACK"
+#define FILECREATED "FILECREATED\n"
+#define FILECONTENT "FILECONTENT"
+#define DELETED "DELETED\n"
+#define UPDATED "UPDATED\n"
+
+
 typedef struct file {
   char length[SIZE_MAX_BUFLEN+1];
   char filename[MAX_BUFLEN+1];
@@ -40,11 +58,11 @@ struct protocoll {
 };
 
 
-#line 117 "lib/messageProcessing.rl"
+#line 145 "lib/messageProcessing.rl"
 
 
 
-#line 48 "lib/messageProcessing.c"
+#line 66 "lib/messageProcessing.c"
 static const char _protocoll_actions[] = {
 	0, 1, 0, 1, 2, 1, 3, 1, 
 	4, 1, 5, 1, 7, 1, 12, 2, 
@@ -161,21 +179,7 @@ static const int protocoll_error = 0;
 static const int protocoll_en_main = 1;
 
 
-#line 120 "lib/messageProcessing.rl"
-
-// Responses
-// Errors
-#define FILEEXISTS "FILEEXISTS\n"
-#define NOSUCHFILE "NOSUCHFILE\n"
-#define COMMAND_UNKNOWN "COMMAND_UNKNOWN\n"
-
-// positive responses
-#define ACK "ACK"
-#define FILECREATED "FILECREATED\n"
-#define FILECONTENT "FILECONTENT"
-#define DELETED "DELETED\n"
-#define UPDATED "UPDATED\n"
-
+#line 148 "lib/messageProcessing.rl"
 /**
  * Since many bad people try to cause SigV ...
  */
@@ -202,14 +206,17 @@ size_t validate_size(char *len, char *content) {
     return 0;
   }
 
-  if (payload_size > content_size) {
-    log_info("LENGTH > strlen(CONTENT). Adjusting LENGTH");
+  if(content_size < payload_size) {
     payload_size = content_size;
   }
 
   //ignore len if > MAX_BUFLEN
   if(payload_size > MAX_BUFLEN) {
     payload_size = MAX_BUFLEN;
+  }
+
+  if(content_size > payload_size) {
+    content[payload_size] = '\000';
   }
 
   return payload_size;
@@ -262,9 +269,6 @@ char *create_file(ConcurrentLinkedList *list, File *file) {
   log_debug("len Content: %zu", strlen(file->content));
 
   // save string with \000
-  if(strlen(file->content) > payload_size) {
-    file->content[payload_size] = '\000';
-  }
   payload_size++;
 
   payload_size = (payload_size) * sizeof(unsigned char);
@@ -297,15 +301,10 @@ char *read_file(ConcurrentLinkedList *list, File *file) {
   if (payload_size > 0 ) {
     // + \000
     char len_c[SIZE_MAX_BUFLEN+1];
-  
+
     // return LENGTH without \000
     payload_size--;
     snprintf(len_c, (SIZE_MAX_BUFLEN +1), "%zu", payload_size);
-
-    if(payload_size != strlen(payload)) {
-      log_error("Sth. went total wrong!");
-      log_error("len= %zu, strlen= %zu", payload_size, strlen(payload));
-    }
 
     log_debug("strlen filename = %zu", strlen(file->filename));
     to_return = join_with_seperator(FILECONTENT, file->filename, " ");
@@ -337,12 +336,7 @@ char *update_file(ConcurrentLinkedList *list, File *file) {
   log_info("Content: %s", file->content);
 
   // save string with \000
-  if(strlen(file->content) > payload_size) {
-    file->content[payload_size] = '\000';
-  }
   payload_size++;
-
-  payload_size = (payload_size) * sizeof(unsigned char);
   char *content = file->content;
 
   if(0 != updateListElementByID(list, (void *) &content, payload_size, (file->filename))) {
@@ -379,17 +373,17 @@ char *handle_message(size_t msg_size, char *msg, ConcurrentLinkedList *file_list
   fsm->buflen = 0;
 
   
-#line 383 "lib/messageProcessing.c"
+#line 377 "lib/messageProcessing.c"
 	{
 	 fsm->cs = protocoll_start;
 	}
 
-#line 337 "lib/messageProcessing.rl"
+#line 341 "lib/messageProcessing.rl"
 
   char *p = msg;
   char *pe = p + msg_size;
   
-#line 393 "lib/messageProcessing.c"
+#line 387 "lib/messageProcessing.c"
 	{
 	int _klen;
 	unsigned int _trans;
@@ -464,84 +458,92 @@ _match:
 		switch ( *_acts++ )
 		{
 	case 0:
-#line 48 "lib/messageProcessing.rl"
+#line 66 "lib/messageProcessing.rl"
 	{
     if ( fsm->buflen < MAX_BUFLEN ) {
-      fsm->file.content[fsm->buflen++] = (*p);
+      fsm->file.content[fsm->buflen] = (*p);
     }
+    fsm->buflen++;
   }
 	break;
 	case 1:
-#line 53 "lib/messageProcessing.rl"
+#line 72 "lib/messageProcessing.rl"
 	{
     if ( fsm->buflen <= MAX_BUFLEN ) {
       fsm->file.content[fsm->buflen++] = '\000';
+    } else {
+      return CONTENT_TO_LONG;
     }
   }
 	break;
 	case 2:
-#line 60 "lib/messageProcessing.rl"
+#line 81 "lib/messageProcessing.rl"
 	{
     if ( fsm->buflen < MAX_BUFLEN ) {
-      fsm->file.filename[fsm->buflen++] = (*p);
+      fsm->file.filename[fsm->buflen] = (*p);
     }
+    fsm->buflen++;
   }
 	break;
 	case 3:
-#line 65 "lib/messageProcessing.rl"
+#line 88 "lib/messageProcessing.rl"
 	{
     if ( fsm->buflen <= MAX_BUFLEN ) {
       fsm->file.filename[fsm->buflen++] = '\000';
+    } else {
+      return FILENAME_TO_LONG;
     }
   }
 	break;
 	case 4:
-#line 72 "lib/messageProcessing.rl"
+#line 97 "lib/messageProcessing.rl"
 	{
     if ( fsm->buflen < SIZE_MAX_BUFLEN ) {
-      fsm->file.length[fsm->buflen++] = (*p);
+      fsm->file.length[fsm->buflen] = (*p);
     }
+    fsm->buflen++;
   }
 	break;
 	case 5:
-#line 77 "lib/messageProcessing.rl"
+#line 104 "lib/messageProcessing.rl"
 	{
     if ( fsm->buflen <= SIZE_MAX_BUFLEN ) {
       fsm->file.length[fsm->buflen++] = '\000';
-    }
+    } 
+  // File Len will be validated later
   }
 	break;
 	case 6:
-#line 84 "lib/messageProcessing.rl"
+#line 112 "lib/messageProcessing.rl"
 	{ 
     fsm->buflen = 0; 
   }
 	break;
 	case 7:
-#line 94 "lib/messageProcessing.rl"
+#line 122 "lib/messageProcessing.rl"
 	{ return list_files(file_list); }
 	break;
 	case 8:
-#line 95 "lib/messageProcessing.rl"
+#line 123 "lib/messageProcessing.rl"
 	{ return read_file(file_list, &fsm->file); }
 	break;
 	case 9:
-#line 96 "lib/messageProcessing.rl"
+#line 124 "lib/messageProcessing.rl"
 	{ return delete_file(file_list, &fsm->file); }
 	break;
 	case 10:
-#line 97 "lib/messageProcessing.rl"
+#line 125 "lib/messageProcessing.rl"
 	{ return update_file(file_list, &fsm->file); }
 	break;
 	case 11:
-#line 98 "lib/messageProcessing.rl"
+#line 126 "lib/messageProcessing.rl"
 	{ return create_file(file_list, &fsm->file); }
 	break;
 	case 12:
-#line 105 "lib/messageProcessing.rl"
+#line 133 "lib/messageProcessing.rl"
 	{ return "FTW ;-)\n"; }
 	break;
-#line 545 "lib/messageProcessing.c"
+#line 547 "lib/messageProcessing.c"
 		}
 	}
 
@@ -554,7 +556,7 @@ _again:
 	_out: {}
 	}
 
-#line 341 "lib/messageProcessing.rl"
+#line 345 "lib/messageProcessing.rl"
 
   // save  default
   log_error( "Command unknown: '%s'", msg);

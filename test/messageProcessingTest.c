@@ -90,28 +90,40 @@ void create_real_long_String(size_t len, char **result, char c) {
   strncpy(*result, to_return, len+1);
 }
 
-void runFilencontentSizeTest(size_t in, size_t expected) {
-  char real_long_string[MAX_MSG_LEN + 10];
-  char real_long_string2[MAX_MSG_LEN + 10];
+void runFilencontentSizeTestFail(size_t in) {
+  char real_long_string[MAX_MSG_LEN + MAX_MSG_LEN];
   char *bad_string;
-  char *good_string;
+  create_real_long_String(in, &bad_string, 'n');
+
+  sprintf(real_long_string,"CREATE blub %zu\n%s\n", in, bad_string);
+  runTestcase(real_long_string, "CONTENT_TO_LONG\n");
+
+  runTestcase("READ blub\n","NOSUCHFILE\n");
+
+  runTestcase("LIST\n", "ACK 0\n");
+  
+  sprintf(real_long_string,"UPDATE blub %zu\n%s\n", in, bad_string);
+  runTestcase(real_long_string, "CONTENT_TO_LONG\n");
+}
+
+void runFilencontentSizeTest(size_t in) {
+  char real_long_string[MAX_MSG_LEN + 10];
+  char *bad_string;
   create_real_long_String(in, &bad_string, 'c');
-  create_real_long_String(expected, &good_string, 'c');
 
   sprintf(real_long_string,"CREATE blub %zu\n%s\n", in, bad_string);
   runTestcase(real_long_string, "FILECREATED\n");
 
-  sprintf(real_long_string,"FILECONTENT blub %zu\n%s\n", expected, good_string);
+  sprintf(real_long_string,"FILECONTENT blub %zu\n%s\n", in, bad_string);
   runTestcase("READ blub\n", real_long_string);
 
   runTestcase("LIST\n", "ACK 1\nblub\n");
   
   create_real_long_String(in, &bad_string, 'd');
-  create_real_long_String(expected, &good_string, 'd');
   sprintf(real_long_string,"UPDATE blub %zu\n%s\n", in, bad_string);
   runTestcase(real_long_string, "UPDATED\n");
 
-  sprintf(real_long_string,"FILECONTENT blub %zu\n%s\n", expected, good_string);
+  sprintf(real_long_string,"FILECONTENT blub %zu\n%s\n", in, bad_string);
   runTestcase("READ blub\n", real_long_string);
 
   runTestcase("LIST\n", "ACK 1\nblub\n");
@@ -121,32 +133,47 @@ void runFilencontentSizeTest(size_t in, size_t expected) {
   runTestcase("LIST\n", "ACK 0\n");
 }
 
-void runFilenameSizeTest(size_t in, size_t expected) {
+void runFilenameSizeTestFail(size_t in) {
+  char real_long_string[MAX_MSG_LEN + 100];
+  char *bad_string;
+  create_real_long_String(in, &bad_string, 'n');
+
+  sprintf(real_long_string,"CREATE %s 3\n123\n", bad_string);
+  runTestcase(real_long_string, "FILENAME_TO_LONG\n");
+
+  sprintf(real_long_string,"READ %s\n", bad_string);
+  runTestcase(real_long_string, "FILENAME_TO_LONG\n");
+
+  runTestcase("LIST\n", "ACK 0\n");
+  
+  sprintf(real_long_string,"UPDATE %s %zu\n%s\n", bad_string, in, bad_string);
+  runTestcase(real_long_string, "FILENAME_TO_LONG\n");
+}
+
+void runFilenameSizeTest(size_t in) {
   char real_long_string[MAX_MSG_LEN + 10];
   char real_long_string2[MAX_MSG_LEN + 10];
   char *bad_string;
-  char *good_string;
   create_real_long_String(in, &bad_string, 'n');
-  create_real_long_String(expected, &good_string, 'n');
 
   sprintf(real_long_string,"CREATE %s 3\n123\n", bad_string);
   runTestcase(real_long_string, "FILECREATED\n");
 
   sprintf(real_long_string,"READ %s\n", bad_string);
-  sprintf(real_long_string2,"FILECONTENT %s 3\n123\n", good_string);
+  sprintf(real_long_string2,"FILECONTENT %s 3\n123\n", bad_string);
   runTestcase(real_long_string, real_long_string2);
 
-  sprintf(real_long_string,"ACK 1\n%s\n", good_string);
+  sprintf(real_long_string,"ACK 1\n%s\n", bad_string);
   runTestcase("LIST\n", real_long_string);
   
   sprintf(real_long_string,"UPDATE %s 3\n567\n", bad_string);
   runTestcase(real_long_string, "UPDATED\n");
 
   sprintf(real_long_string,"READ %s\n", bad_string);
-  sprintf(real_long_string2,"FILECONTENT %s 3\n567\n", good_string);
+  sprintf(real_long_string2,"FILECONTENT %s 3\n567\n", bad_string);
   runTestcase(real_long_string, real_long_string2);
 
-  sprintf(real_long_string,"ACK 1\n%s\n", good_string);
+  sprintf(real_long_string,"ACK 1\n%s\n", bad_string);
   runTestcase("LIST\n", real_long_string);
   
   sprintf(real_long_string,"DELETE %s\n", bad_string);
@@ -155,34 +182,49 @@ void runFilenameSizeTest(size_t in, size_t expected) {
   runTestcase("LIST\n", "ACK 0\n");
 }
 
-void runExtremeLenTests(size_t in, size_t expected) {
+void runExtremeLenTestsFail(size_t in) {
+  char real_long_string[MAX_MSG_LEN + 100];
+  char *bad_string;
+  create_real_long_String(in, &bad_string, 'n');
+
+  sprintf(real_long_string,"CREATE %s %zu\n%s\n", bad_string, in, bad_string);
+  runTestcase(real_long_string, "FILENAME_TO_LONG\n");
+
+  sprintf(real_long_string,"READ %s\n", bad_string);
+  runTestcase(real_long_string, "FILENAME_TO_LONG\n");
+
+  runTestcase("LIST\n", "ACK 0\n");
+  
+  sprintf(real_long_string,"UPDATE %s %zu\n%s\n", bad_string, in, bad_string);
+  runTestcase(real_long_string, "FILENAME_TO_LONG\n");
+}
+
+void runExtremeLenTests(size_t in) {
   char real_long_string[MAX_MSG_LEN + 100];
   char real_long_string2[MAX_MSG_LEN + 100];
   char *bad_string;
-  char *good_string;
   create_real_long_String(in, &bad_string, 'q');
-  create_real_long_String(expected, &good_string, 'q');
 
   sprintf(real_long_string,"CREATE %s %zu\n%s\n", bad_string, in, bad_string);
   runTestcase(real_long_string, "FILECREATED\n");
 
   sprintf(real_long_string,"READ %s\n", bad_string);
-  sprintf(real_long_string2,"FILECONTENT %s %zu\n%s\n", good_string, expected, good_string);
+  sprintf(real_long_string2,"FILECONTENT %s %zu\n%s\n", bad_string, in, bad_string);
   runTestcase(real_long_string, real_long_string2);
 
-  sprintf(real_long_string,"ACK 1\n%s\n", good_string);
+  sprintf(real_long_string,"ACK 1\n%s\n", bad_string);
   runTestcase("LIST\n", real_long_string);
   
   create_real_long_String(in, &bad_string, 'd');
-  create_real_long_String(expected, &good_string, 'd');
+  create_real_long_String(in, &bad_string, 'd');
   sprintf(real_long_string,"UPDATE %s %zu\n%s\n", bad_string, in, bad_string);
   runTestcase(real_long_string, "UPDATED\n");
 
   sprintf(real_long_string,"READ %s\n", bad_string);
-  sprintf(real_long_string2,"FILECONTENT %s %zu\n%s\n", good_string, expected, good_string);
+  sprintf(real_long_string2,"FILECONTENT %s %zu\n%s\n", bad_string, in, bad_string);
   runTestcase(real_long_string, real_long_string2);
 
-  sprintf(real_long_string,"ACK 1\n%s\n", good_string);
+  sprintf(real_long_string,"ACK 1\n%s\n", bad_string);
   runTestcase("LIST\n", real_long_string);
   
   sprintf(real_long_string,"DELETE %s\n", bad_string);
@@ -309,22 +351,6 @@ void runTestcases() {
   runTestcase("DELETE hack2\n", "DELETED\n");
   runTestcase("LIST\n", "ACK 0\n");
 
-// messing arround with the lens
-  runFilenameSizeTest((MAX_BUFLEN-1) , (MAX_BUFLEN-1));
-  runFilenameSizeTest(MAX_BUFLEN , MAX_BUFLEN);
-  runFilenameSizeTest((MAX_BUFLEN+1) , MAX_BUFLEN);
-  runFilenameSizeTest((MAX_BUFLEN+MAX_BUFLEN-100) , MAX_BUFLEN);
-
-  runFilencontentSizeTest((MAX_BUFLEN-1) , (MAX_BUFLEN-1));
-  runFilencontentSizeTest(MAX_BUFLEN , MAX_BUFLEN);
-  runFilencontentSizeTest((MAX_BUFLEN+1) , MAX_BUFLEN);
-  runFilencontentSizeTest((MAX_BUFLEN+MAX_BUFLEN-100) , MAX_BUFLEN);
-
-  runExtremeLenTests((MAX_BUFLEN-1) , (MAX_BUFLEN-1));
-  runExtremeLenTests(MAX_BUFLEN , MAX_BUFLEN);
-  runExtremeLenTests((MAX_BUFLEN+1) , MAX_BUFLEN);
-  runExtremeLenTests((MAX_BUFLEN+5) , MAX_BUFLEN);
-
   runTestcase("CREATE lol 12356\n123\n", "FILECREATED\n");
   runTestcase("READ lol\n", "FILECONTENT lol 3\n123\n");
   runTestcase("UPDATE lol 1337\nqwertz\n", "FILECREATED\n");
@@ -338,6 +364,22 @@ void runTestcases() {
   runTestcase("READ lol\n", "FILECONTENT lol 6\nqwertz\n");
   runTestcase("LIST\n", "ACK 1\nlol\n");
   runTestcase("DELETE lol\n", "DELETED\n");
+// messing arround with the lens
+  runFilenameSizeTest((MAX_BUFLEN-1) );
+  runFilenameSizeTest(MAX_BUFLEN  );
+  runFilenameSizeTestFail((MAX_BUFLEN+1)  );
+  runFilenameSizeTestFail((MAX_BUFLEN+5)  );
+
+  runFilencontentSizeTest((MAX_BUFLEN-1)  );
+  runFilencontentSizeTest(MAX_BUFLEN  );
+  runFilencontentSizeTestFail((MAX_BUFLEN+1)  );
+  runFilencontentSizeTestFail((MAX_BUFLEN+5)  );
+
+  runExtremeLenTests((MAX_BUFLEN-1)  );
+  runExtremeLenTests(MAX_BUFLEN  );
+  runExtremeLenTestsFail((MAX_BUFLEN+1)  );
+  runExtremeLenTestsFail((MAX_BUFLEN+5)  );
+
 }
 
 void usage(const char *argv0, const char *msg) {

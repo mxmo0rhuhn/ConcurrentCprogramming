@@ -25,6 +25,24 @@
 #include <string.h>
 #include <stdio.h>
 
+// Responses
+// Errors
+#define FILEEXISTS "FILEEXISTS\n"
+#define NOSUCHFILE "NOSUCHFILE\n"
+
+// Not used in the protocol
+#define COMMAND_UNKNOWN "COMMAND_UNKNOWN\n"
+#define FILENAME_TO_LONG "FILENAME_TO_LONG\n"
+#define CONTENT_TO_LONG "CONTENT_TO_LONG\n"
+
+// positive responses
+#define ACK "ACK"
+#define FILECREATED "FILECREATED\n"
+#define FILECONTENT "FILECONTENT"
+#define DELETED "DELETED\n"
+#define UPDATED "UPDATED\n"
+
+
 typedef struct file {
   char length[SIZE_MAX_BUFLEN+1];
   char filename[MAX_BUFLEN+1];
@@ -47,37 +65,47 @@ struct protocoll {
 # Append the current character to the content buffer
   action append_content {
     if ( fsm->buflen < MAX_BUFLEN ) {
-      fsm->file.content[fsm->buflen++] = fc;
+      fsm->file.content[fsm->buflen] = fc;
     }
+    fsm->buflen++;
   }
   action term_content {
     if ( fsm->buflen <= MAX_BUFLEN ) {
       fsm->file.content[fsm->buflen++] = '\000';
+    } else {
+      return CONTENT_TO_LONG;
     }
   }
 
 # Append the current character to the filename buffer
   action append_filename {
     if ( fsm->buflen < MAX_BUFLEN ) {
-      fsm->file.filename[fsm->buflen++] = fc;
+      fsm->file.filename[fsm->buflen] = fc;
     }
+    fsm->buflen++;
   }
+
   action term_filename {
     if ( fsm->buflen <= MAX_BUFLEN ) {
       fsm->file.filename[fsm->buflen++] = '\000';
+    } else {
+      return FILENAME_TO_LONG;
     }
   }
 
 # Append the current character to the length buffer
   action append_length {
     if ( fsm->buflen < SIZE_MAX_BUFLEN ) {
-      fsm->file.length[fsm->buflen++] = fc;
+      fsm->file.length[fsm->buflen] = fc;
     }
+    fsm->buflen++;
   }
+
   action term_length {
     if ( fsm->buflen <= SIZE_MAX_BUFLEN ) {
       fsm->file.length[fsm->buflen++] = '\000';
-    }
+    } 
+  // File Len will be validated later
   }
 
 # prepare for a new buffer
@@ -117,20 +145,6 @@ main := (
 }%%
 
 %% write data;
-
-// Responses
-// Errors
-#define FILEEXISTS "FILEEXISTS\n"
-#define NOSUCHFILE "NOSUCHFILE\n"
-#define COMMAND_UNKNOWN "COMMAND_UNKNOWN\n"
-
-// positive responses
-#define ACK "ACK"
-#define FILECREATED "FILECREATED\n"
-#define FILECONTENT "FILECONTENT"
-#define DELETED "DELETED\n"
-#define UPDATED "UPDATED\n"
-
 /**
  * Since many bad people try to cause SigV ...
  */
@@ -157,14 +171,17 @@ size_t validate_size(char *len, char *content) {
     return 0;
   }
 
-  if (payload_size > content_size) {
-    log_info("LENGTH > strlen(CONTENT). Adjusting LENGTH");
+  if(content_size < payload_size) {
     payload_size = content_size;
   }
 
   //ignore len if > MAX_BUFLEN
   if(payload_size > MAX_BUFLEN) {
     payload_size = MAX_BUFLEN;
+  }
+
+  if(content_size > payload_size) {
+    content[payload_size] = '\000';
   }
 
   return payload_size;
@@ -217,9 +234,6 @@ char *create_file(ConcurrentLinkedList *list, File *file) {
   log_debug("len Content: %zu", strlen(file->content));
 
   // save string with \000
-  if(strlen(file->content) > payload_size) {
-    file->content[payload_size] = '\000';
-  }
   payload_size++;
 
   payload_size = (payload_size) * sizeof(unsigned char);
@@ -252,15 +266,10 @@ char *read_file(ConcurrentLinkedList *list, File *file) {
   if (payload_size > 0 ) {
     // + \000
     char len_c[SIZE_MAX_BUFLEN+1];
-  
+
     // return LENGTH without \000
     payload_size--;
     snprintf(len_c, (SIZE_MAX_BUFLEN +1), "%zu", payload_size);
-
-    if(payload_size != strlen(payload)) {
-      log_error("Sth. went total wrong!");
-      log_error("len= %zu, strlen= %zu", payload_size, strlen(payload));
-    }
 
     log_debug("strlen filename = %zu", strlen(file->filename));
     to_return = join_with_seperator(FILECONTENT, file->filename, " ");
@@ -292,12 +301,7 @@ char *update_file(ConcurrentLinkedList *list, File *file) {
   log_info("Content: %s", file->content);
 
   // save string with \000
-  if(strlen(file->content) > payload_size) {
-    file->content[payload_size] = '\000';
-  }
   payload_size++;
-
-  payload_size = (payload_size) * sizeof(unsigned char);
   char *content = file->content;
 
   if(0 != updateListElementByID(list, (void *) &content, payload_size, (file->filename))) {
