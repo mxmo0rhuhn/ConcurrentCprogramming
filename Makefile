@@ -3,30 +3,30 @@ LIBS=-lpthread -ltermpaper
 
 SERVER_FILE=server.c
 CLIENT_FILE=client.c
+TEST_FILE=test/unitTest.c
 
-SERVER_OUT=server.out
-CLIENT_OUT=client.out
+SERVER_OUT=run
+CLIENT_OUT=client
+TEST_OUT=test
 
 all: test run 
 
 clean:
-	rm lib/*.a lib/*.o test/*.o $(CLIENT_OUT) $(SERVER_OUT) 
+	rm -f lib/*.a lib/*.o test/*.o $(CLIENT_OUT) $(SERVER_OUT) 
 
-test: $(CLIENT_FILE) lib/libtermpaper.a 
-	gcc $(CFLAGS) $(CLIENT_FILE) $(LIBS) -o $(CLIENT_OUT)
-
+# the Server 
 run: $(SERVER_FILE) lib/libtermpaper.a 
 	gcc $(CFLAGS) $(SERVER_FILE) $(LIBS) -o $(SERVER_OUT)
 
+# an interactive client
+client: $(CLIENT_FILE) lib/libtermpaper.a 
+	gcc $(CFLAGS) $(CLIENT_FILE) $(LIBS) -o $(CLIENT_OUT)
+
 # some module tests for the framework
-
-module_test: message_processing_test
-
-message_processing_test: test/messageProcessingTest.c lib/libtermpaper.a 
-	gcc $(CFLAGS) test/messageProcessingTest.c $(LIBS) -o test/messageProcessingTest.o
+test: $(TEST_FILE) lib/libtermpaper.a 
+	gcc $(CFLAGS) $(TEST_FILE) $(LIBS) -o $(TEST_OUT)
 
 # shared libs
-
 lib/termPaperLib.o: lib/termPaperLib.c include/termPaperLib.h
 	gcc -c $(CFLAGS) lib/termPaperLib.c -o lib/termPaperLib.o
 
@@ -40,6 +40,5 @@ lib/libtermpaper.a: lib/termPaperLib.o lib/concurrentLinkedList.o lib/messagePro
 	ar crs lib/libtermpaper.a lib/termPaperLib.o lib/concurrentLinkedList.o lib/messageProcessing.o 
 
 # ragel - special processing for input parsing
-
 ragel: lib/messageProcessing.rl 
 	ragel -C lib/messageProcessing.rl -o lib/messageProcessing.c
