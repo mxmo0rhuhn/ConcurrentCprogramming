@@ -106,33 +106,6 @@ void runFilencontentSizeTestFail(size_t in) {
   runTestcase(real_long_string, "CONTENT_TO_LONG\n");
 }
 
-void runFilencontentSizeTest(size_t in) {
-  char real_long_string[MAX_MSG_LEN + 10];
-  char *bad_string;
-  create_real_long_String(in, &bad_string, 'c');
-
-  sprintf(real_long_string,"CREATE blub %zu\n%s\n", in, bad_string);
-  runTestcase(real_long_string, "FILECREATED\n");
-
-  sprintf(real_long_string,"FILECONTENT blub %zu\n%s\n", in, bad_string);
-  runTestcase("READ blub\n", real_long_string);
-
-  runTestcase("LIST\n", "ACK 1\nblub\n");
-  
-  create_real_long_String(in, &bad_string, 'd');
-  sprintf(real_long_string,"UPDATE blub %zu\n%s\n", in, bad_string);
-  runTestcase(real_long_string, "UPDATED\n");
-
-  sprintf(real_long_string,"FILECONTENT blub %zu\n%s\n", in, bad_string);
-  runTestcase("READ blub\n", real_long_string);
-
-  runTestcase("LIST\n", "ACK 1\nblub\n");
-  
-  runTestcase("DELETE blub\n", "DELETED\n");
-
-  runTestcase("LIST\n", "ACK 0\n");
-}
-
 void runFilenameSizeTestFail(size_t in) {
   char real_long_string[MAX_MSG_LEN + 100];
   char *bad_string;
@@ -148,38 +121,6 @@ void runFilenameSizeTestFail(size_t in) {
   
   sprintf(real_long_string,"UPDATE %s %zu\n%s\n", bad_string, in, bad_string);
   runTestcase(real_long_string, "FILENAME_TO_LONG\n");
-}
-
-void runFilenameSizeTest(size_t in) {
-  char real_long_string[MAX_MSG_LEN + 10];
-  char real_long_string2[MAX_MSG_LEN + 10];
-  char *bad_string;
-  create_real_long_String(in, &bad_string, 'n');
-
-  sprintf(real_long_string,"CREATE %s 3\n123\n", bad_string);
-  runTestcase(real_long_string, "FILECREATED\n");
-
-  sprintf(real_long_string,"READ %s\n", bad_string);
-  sprintf(real_long_string2,"FILECONTENT %s 3\n123\n", bad_string);
-  runTestcase(real_long_string, real_long_string2);
-
-  sprintf(real_long_string,"ACK 1\n%s\n", bad_string);
-  runTestcase("LIST\n", real_long_string);
-  
-  sprintf(real_long_string,"UPDATE %s 3\n567\n", bad_string);
-  runTestcase(real_long_string, "UPDATED\n");
-
-  sprintf(real_long_string,"READ %s\n", bad_string);
-  sprintf(real_long_string2,"FILECONTENT %s 3\n567\n", bad_string);
-  runTestcase(real_long_string, real_long_string2);
-
-  sprintf(real_long_string,"ACK 1\n%s\n", bad_string);
-  runTestcase("LIST\n", real_long_string);
-  
-  sprintf(real_long_string,"DELETE %s\n", bad_string);
-  runTestcase(real_long_string, "DELETED\n");
-
-  runTestcase("LIST\n", "ACK 0\n");
 }
 
 void runExtremeLenTestsFail(size_t in) {
@@ -201,39 +142,45 @@ void runExtremeLenTestsFail(size_t in) {
   runTestcase(real_long_string, "FILENAME_TO_LONG\n");
 }
 
-void runExtremeLenTests(size_t in) {
-  char real_long_string[MAX_MSG_LEN + 100];
-  char real_long_string2[MAX_MSG_LEN + 100];
-  char *name_string;
-  char *bad_string;
-  create_real_long_String(in, &name_string, 'r');
-  create_real_long_String(in, &bad_string, 'q');
+void runRoundtripTest(char* filename, size_t length, char *content, size_t length_update, char *update) {
+  char request[MAX_MSG_LEN + 100];
+  char response[MAX_MSG_LEN + 100];
 
-  sprintf(real_long_string,"CREATE %s %zu\n%s\n", name_string, in, bad_string);
-  runTestcase(real_long_string, "FILECREATED\n");
+  sprintf(request,"CREATE %s %zu\n%s\n", filename, length, content);
+  runTestcase(request, "FILECREATED\n");
 
-  sprintf(real_long_string,"READ %s\n", name_string);
-  sprintf(real_long_string2,"FILECONTENT %s %zu\n%s\n", name_string, in, bad_string);
-  runTestcase(real_long_string, real_long_string2);
+  sprintf(response,"ACK 1\n%s\n", filename);
+  runTestcase("LIST\n", response);
 
-  sprintf(real_long_string,"ACK 1\n%s\n", name_string);
-  runTestcase("LIST\n", real_long_string);
-  
-  create_real_long_String(in, &bad_string, 'd');
-  sprintf(real_long_string,"UPDATE %s %zu\n%s\n", name_string, in, bad_string);
-  runTestcase(real_long_string, "UPDATED\n");
+  sprintf(request,"READ %s\n", filename);
+  sprintf(response,"FILECONTENT %s %zu\n%s\n", filename, length, content);
+  runTestcase(request, response);
 
-  sprintf(real_long_string,"READ %s\n", name_string);
-  sprintf(real_long_string2,"FILECONTENT %s %zu\n%s\n", name_string, in, bad_string);
-  runTestcase(real_long_string, real_long_string2);
+  sprintf(request,"UPDATE %s %zu\n%s\n", filename, length_update, update);
+  runTestcase(request, "UPDATED\n");
 
-  sprintf(real_long_string,"ACK 1\n%s\n", name_string);
-  runTestcase("LIST\n", real_long_string);
-  
-  sprintf(real_long_string,"DELETE %s\n", name_string);
-  runTestcase(real_long_string, "DELETED\n");
+  sprintf(response,"ACK 1\n%s\n", filename);
+  runTestcase("LIST\n", response);
+
+  sprintf(request,"READ %s\n", filename);
+  sprintf(response,"FILECONTENT %s %zu\n%s\n", filename, length_update, update);
+  runTestcase(request, response);
+
+  sprintf(request,"DELETE %s\n", filename);
+  runTestcase(request, "DELETED\n");
 
   runTestcase("LIST\n", "ACK 0\n");
+}
+
+void runLenTest(size_t filename_len, size_t content_len) {
+  char *name_string;
+  char *content_string;
+  char *update_string;
+  create_real_long_String(filename_len, &name_string, 'r');
+  create_real_long_String(content_len, &content_string, 'q');
+  create_real_long_String(content_len, &update_string, 'g');
+
+  runRoundtripTest(name_string, content_len, content_string, content_len, update_string);
 }
 
 void runTestcases() {
@@ -265,71 +212,76 @@ void runTestcases() {
   runTestcase("DELETE im possible 3\n123\n", "COMMAND_UNKNOWN\n");
   runTestcase("READ im possible 3\n123\n", "COMMAND_UNKNOWN\n");
 
-// filename with spaces 
+// filename with special characters
   log_debug("---------------------------------------------------");
-  log_debug("filenames with special chars with spaces");
-  runTestcase("CREATE im possible 3\n123\n", "COMMAND_UNKNOWN\n");
-  runTestcase("UPDATE im possible 3\n123\n", "COMMAND_UNKNOWN\n");
-  runTestcase("DELETE im possible 3\n123\n", "COMMAND_UNKNOWN\n");
-  runTestcase("READ im possible 3\n123\n", "COMMAND_UNKNOWN\n");
+  log_debug("filename with special characters");
+  runRoundtripTest("file1", 3, "bnm", 5, "blube");
+  runRoundtripTest("file?", 5, "nwwee", 5, "blube");
+  runRoundtripTest("file!", 5, "ttttt", 3, "abc");
+  runRoundtripTest("file_", 3, "bnm", 5, "blube");
+  runRoundtripTest("file-", 3, "bnm", 5, "blube");
 
 //content with spaces 
   log_debug("---------------------------------------------------");
   log_debug("content with spaces");
-  runTestcase("CREATE withSpaces 3\ni i\n", "FILECREATED\n");
-  runTestcase("LIST\n", "ACK 1\nwithSpaces\n");
-  runTestcase("READ withSpaces\n", "FILECONTENT withSpaces 3\ni i\n");
-  runTestcase("UPDATE withSpaces 3\n1 3\n", "UPDATED\n");
-  runTestcase("LIST\n", "ACK 1\nwithSpaces\n");
-  runTestcase("READ withSpaces\n", "FILECONTENT withSpaces 3\n1 3\n");
-  runTestcase("DELETE withSpaces\n", "DELETED\n");
+  runRoundtripTest("file", 3, "i i", 5, "i   i");
+  runRoundtripTest("file", 3, "   ", 5, "    i");
+  runRoundtripTest("file", 3, "i i", 5, "i    ");
+  runRoundtripTest("file", 3, "i i", 5, "     ");
 
-  runTestcase("CREATE withSpaces 3\n   \n", "FILECREATED\n");
-  runTestcase("LIST\n", "ACK 1\nwithSpaces\n");
-  runTestcase("READ withSpaces\n", "FILECONTENT withSpaces 3\n   \n");
-  runTestcase("UPDATE withSpaces 3\n  3\n", "UPDATED\n");
-  runTestcase("LIST\n", "ACK 1\nwithSpaces\n");
-  runTestcase("READ withSpaces\n", "FILECONTENT withSpaces 3\n  3\n");
-  runTestcase("DELETE withSpaces\n", "DELETED\n");
-
-  runTestcase("CREATE withSpaces 3\n  3\n", "FILECREATED\n");
-  runTestcase("LIST\n", "ACK 1\nwithSpaces\n");
-  runTestcase("READ withSpaces\n", "FILECONTENT withSpaces 3\n  3\n");
-  runTestcase("UPDATE withSpaces 3\n   \n", "UPDATED\n");
-  runTestcase("LIST\n", "ACK 1\nwithSpaces\n");
-  runTestcase("READ withSpaces\n", "FILECONTENT withSpaces 3\n   \n");
-  runTestcase("DELETE withSpaces\n", "DELETED\n");
-
-  runTestcase("CREATE withSpaces 3\nr  \n", "FILECREATED\n");
-  runTestcase("LIST\n", "ACK 1\nwithSpaces\n");
-  runTestcase("READ withSpaces\n", "FILECONTENT withSpaces 3\nr  \n");
-  runTestcase("UPDATE withSpaces 3\nd  \n", "UPDATED\n");
-  runTestcase("LIST\n", "ACK 1\nwithSpaces\n");
-  runTestcase("READ withSpaces\n", "FILECONTENT withSpaces 3\nd  \n");
-  runTestcase("DELETE withSpaces\n", "DELETED\n");
+//content with spaces 
+  log_debug("---------------------------------------------------");
+  log_debug("content special characters");
+  runRoundtripTest("file", 3, "123", 5, "12345");
+  runRoundtripTest("file", 3, "!ab", 5, "cdis!");
+  runRoundtripTest("file", 3, "dj$", 5, "bf$ss");
 
 // messing arround with the lens
   log_debug("---------------------------------------------------");
   log_debug("runFilenameSizeTest");
-  runFilenameSizeTest((MAX_BUFLEN-1) );
-  runFilenameSizeTest(MAX_BUFLEN  );
-  log_debug("runFilenameSizeTestFail");
+  runLenTest((MAX_BUFLEN - 1), 33);
+  runLenTest(MAX_BUFLEN, 33);
+
   runFilenameSizeTestFail((MAX_BUFLEN+1)  );
   runFilenameSizeTestFail((MAX_BUFLEN+5)  );
 
   log_debug("---------------------------------------------------");
+  log_debug("runFile length tests");
+  runTestcase("CREATE lol 0\n123\n", "COMMAND_UNKNOWN\n");
+  runTestcase("UPDATE lol 0\nqwertz\n", "COMMAND_UNKNOWN\n");
+  runTestcase("LIST\n", "ACK 0\n");
+
+  // length > content => length = strlen(content)
+  runTestcase("CREATE lol 12356\n123\n", "FILECREATED\n");
+  runTestcase("READ lol\n", "FILECONTENT lol 3\n123\n");
+  runTestcase("UPDATE lol 1337\nqwertz\n", "UPDATED\n");
+  runTestcase("READ lol\n", "FILECONTENT lol 6\nqwertz\n");
+  runTestcase("LIST\n", "ACK 1\nlol\n");
+  runTestcase("DELETE lol\n", "DELETED\n");
+  runTestcase("LIST\n", "ACK 0\n");
+
+  // content > length => length = strlen(content)
+  runTestcase("CREATE lol 1\n123\n", "FILECREATED\n");
+  runTestcase("READ lol\n", "FILECONTENT lol 1\n1\n");
+  runTestcase("UPDATE lol 2\nqwertz\n", "UPDATED\n");
+  runTestcase("READ lol\n", "FILECONTENT lol 2\nqw\n");
+  runTestcase("LIST\n", "ACK 1\nlol\n");
+  runTestcase("DELETE lol\n", "DELETED\n");
+  runTestcase("LIST\n", "ACK 0\n");
+
+  log_debug("---------------------------------------------------");
   log_debug("runFilencontentSizeTest");
-  runFilencontentSizeTest((MAX_BUFLEN-1)  );
-  runFilencontentSizeTest(MAX_BUFLEN  );
-  log_debug("runFilencontentSizeTestFail");
+  runLenTest(33, (MAX_BUFLEN - 1));
+  runLenTest(33, MAX_BUFLEN);
+
   runFilencontentSizeTestFail((MAX_BUFLEN+1)  );
   runFilencontentSizeTestFail((MAX_BUFLEN+5)  );
 
   log_debug("---------------------------------------------------");
   log_debug("runExtremeLenTests");
-  runExtremeLenTests((MAX_BUFLEN-1)  );
-  runExtremeLenTests(MAX_BUFLEN  );
-  log_debug("runExtremeLenTestsFail ");
+  runLenTest((MAX_BUFLEN - 1), (MAX_BUFLEN - 1));
+  runLenTest(MAX_BUFLEN, MAX_BUFLEN);
+
   runExtremeLenTestsFail((MAX_BUFLEN+1)  );
   runExtremeLenTestsFail((MAX_BUFLEN+5)  );
 
@@ -423,18 +375,6 @@ void runTestcases() {
   runTestcase("LIST\n", "ACK 1\nhack2\n");
   runTestcase("DELETE hack2\n", "DELETED\n");
   runTestcase("LIST\n", "ACK 0\n");
-
-  runTestcase("CREATE lol 12356\n123\n", "FILECREATED\n");
-  runTestcase("READ lol\n", "FILECONTENT lol 3\n123\n");
-  runTestcase("UPDATE lol 1337\nqwertz\n", "UPDATED\n");
-  runTestcase("READ lol\n", "FILECONTENT lol 6\nqwertz\n");
-  runTestcase("LIST\n", "ACK 1\nlol\n");
-  runTestcase("DELETE lol\n", "DELETED\n");
-
-  runTestcase("CREATE lol 0\n123\n", "COMMAND_UNKNOWN\n");
-  runTestcase("UPDATE lol 0\nqwertz\n", "COMMAND_UNKNOWN\n");
-  runTestcase("LIST\n", "ACK 0\n");
-
 }
 
 void usage(const char *argv0, const char *msg) {

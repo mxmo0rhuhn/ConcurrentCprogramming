@@ -13,21 +13,13 @@ INFO: Testcase 8: OK!
 INFO: Testcase 9: OK!
 INFO: Testcase 10: OK!
 DEBUG: ---------------------------------------------------
-DEBUG: content with spaces
+DEBUG: filename with special characters
 INFO: Testcase 11: OK!
 INFO: Testcase 12: OK!
 INFO: Testcase 13: OK!
 INFO: Testcase 14: OK!
 INFO: Testcase 15: OK!
-ERROR: Testcase 16: FAILED!
-ERROR: send: 'READ withSpaces
-'
-ERROR: Expected: 'FILECONTENT withSpaces 3
-i 3
-'
-ERROR: Recived : 'FILECONTENT withSpaces 3
-1 3
-'
+INFO: Testcase 16: OK!
 INFO: Testcase 17: OK!
 INFO: Testcase 18: OK!
 INFO: Testcase 19: OK!
@@ -50,8 +42,6 @@ INFO: Testcase 35: OK!
 INFO: Testcase 36: OK!
 INFO: Testcase 37: OK!
 INFO: Testcase 38: OK!
-DEBUG: ---------------------------------------------------
-DEBUG: runFilenameSizeTest
 INFO: Testcase 39: OK!
 INFO: Testcase 40: OK!
 INFO: Testcase 41: OK!
@@ -64,11 +54,12 @@ INFO: Testcase 47: OK!
 INFO: Testcase 48: OK!
 INFO: Testcase 49: OK!
 INFO: Testcase 50: OK!
+DEBUG: ---------------------------------------------------
+DEBUG: content with spaces
 INFO: Testcase 51: OK!
 INFO: Testcase 52: OK!
 INFO: Testcase 53: OK!
 INFO: Testcase 54: OK!
-DEBUG: runFilenameSizeTestFail
 INFO: Testcase 55: OK!
 INFO: Testcase 56: OK!
 INFO: Testcase 57: OK!
@@ -77,8 +68,6 @@ INFO: Testcase 59: OK!
 INFO: Testcase 60: OK!
 INFO: Testcase 61: OK!
 INFO: Testcase 62: OK!
-DEBUG: ---------------------------------------------------
-DEBUG: runFilencontentSizeTest
 INFO: Testcase 63: OK!
 INFO: Testcase 64: OK!
 INFO: Testcase 65: OK!
@@ -95,17 +84,16 @@ INFO: Testcase 75: OK!
 INFO: Testcase 76: OK!
 INFO: Testcase 77: OK!
 INFO: Testcase 78: OK!
-DEBUG: runFilencontentSizeTestFail
 INFO: Testcase 79: OK!
 INFO: Testcase 80: OK!
 INFO: Testcase 81: OK!
 INFO: Testcase 82: OK!
+DEBUG: ---------------------------------------------------
+DEBUG: content special characters
 INFO: Testcase 83: OK!
 INFO: Testcase 84: OK!
 INFO: Testcase 85: OK!
 INFO: Testcase 86: OK!
-DEBUG: ---------------------------------------------------
-DEBUG: runExtremeLenTests
 INFO: Testcase 87: OK!
 INFO: Testcase 88: OK!
 INFO: Testcase 89: OK!
@@ -122,17 +110,16 @@ INFO: Testcase 99: OK!
 INFO: Testcase 100: OK!
 INFO: Testcase 101: OK!
 INFO: Testcase 102: OK!
-DEBUG: runExtremeLenTestsFail 
 INFO: Testcase 103: OK!
 INFO: Testcase 104: OK!
 INFO: Testcase 105: OK!
 INFO: Testcase 106: OK!
+DEBUG: ---------------------------------------------------
+DEBUG: runFilenameSizeTest
 INFO: Testcase 107: OK!
 INFO: Testcase 108: OK!
 INFO: Testcase 109: OK!
 INFO: Testcase 110: OK!
-DEBUG: ---------------------------------------------------
-DEBUG: General Tests
 INFO: Testcase 111: OK!
 INFO: Testcase 112: OK!
 INFO: Testcase 113: OK!
@@ -153,6 +140,8 @@ INFO: Testcase 127: OK!
 INFO: Testcase 128: OK!
 INFO: Testcase 129: OK!
 INFO: Testcase 130: OK!
+DEBUG: ---------------------------------------------------
+DEBUG: runFile length tests
 INFO: Testcase 131: OK!
 INFO: Testcase 132: OK!
 INFO: Testcase 133: OK!
@@ -170,6 +159,8 @@ INFO: Testcase 144: OK!
 INFO: Testcase 145: OK!
 INFO: Testcase 146: OK!
 INFO: Testcase 147: OK!
+DEBUG: ---------------------------------------------------
+DEBUG: runFilencontentSizeTest
 INFO: Testcase 148: OK!
 INFO: Testcase 149: OK!
 INFO: Testcase 150: OK!
@@ -194,6 +185,8 @@ INFO: Testcase 168: OK!
 INFO: Testcase 169: OK!
 INFO: Testcase 170: OK!
 INFO: Testcase 171: OK!
+DEBUG: ---------------------------------------------------
+DEBUG: runExtremeLenTests
 INFO: Testcase 172: OK!
 INFO: Testcase 173: OK!
 INFO: Testcase 174: OK!
@@ -218,6 +211,8 @@ INFO: Testcase 192: OK!
 INFO: Testcase 193: OK!
 INFO: Testcase 194: OK!
 INFO: Testcase 195: OK!
+DEBUG: ---------------------------------------------------
+DEBUG: General Tests
 INFO: Testcase 196: OK!
 INFO: Testcase 197: OK!
 INFO: Testcase 198: OK!
@@ -226,7 +221,83 @@ INFO: Testcase 200: OK!
 INFO: Testcase 201: OK!
 INFO: Testcase 202: OK!
 INFO: Testcase 203: OK!
+INFO: Testcase 204: OK!
+INFO: Testcase 205: OK!
+INFO: Testcase 206: OK!
+INFO: Testcase 207: OK!
+INFO: Testcase 208: OK!
+INFO: Testcase 209: OK!
+INFO: Testcase 210: OK!
+INFO: Testcase 211: OK!
+INFO: Testcase 212: OK!
+INFO: Testcase 213: OK!
+INFO: Testcase 214: OK!
+INFO: Testcase 215: OK!
+INFO: Testcase 216: OK!
+INFO: Testcase 217: OK!
+INFO: Testcase 218: OK!
+INFO: Testcase 219: OK!
+INFO: Testcase 220: OK!
+INFO: Testcase 221: OK!
+INFO: Testcase 222: OK!
+INFO: Testcase 223: OK!
+INFO: Testcase 224: OK!
+INFO: Testcase 225: OK!
+INFO: Testcase 226: OK!
+INFO: Testcase 227: OK!
+INFO: Testcase 228: OK!
+INFO: Testcase 229: OK!
+INFO: Testcase 230: OK!
+INFO: Testcase 231: OK!
+INFO: Testcase 232: OK!
+INFO: Testcase 233: OK!
+INFO: Testcase 234: OK!
+INFO: Testcase 235: OK!
+INFO: Testcase 236: OK!
+INFO: Testcase 237: OK!
+INFO: Testcase 238: OK!
+INFO: Testcase 239: OK!
+INFO: Testcase 240: OK!
+INFO: Testcase 241: OK!
+INFO: Testcase 242: OK!
+INFO: Testcase 243: OK!
+INFO: Testcase 244: OK!
+INFO: Testcase 245: OK!
+INFO: Testcase 246: OK!
+INFO: Testcase 247: OK!
+INFO: Testcase 248: OK!
+INFO: Testcase 249: OK!
+INFO: Testcase 250: OK!
+INFO: Testcase 251: OK!
+INFO: Testcase 252: OK!
+INFO: Testcase 253: OK!
+INFO: Testcase 254: OK!
+INFO: Testcase 255: OK!
+INFO: Testcase 256: OK!
+INFO: Testcase 257: OK!
+INFO: Testcase 258: OK!
+INFO: Testcase 259: OK!
+INFO: Testcase 260: OK!
+INFO: Testcase 261: OK!
+INFO: Testcase 262: OK!
+INFO: Testcase 263: OK!
+INFO: Testcase 264: OK!
+INFO: Testcase 265: OK!
+INFO: Testcase 266: OK!
+INFO: Testcase 267: OK!
+INFO: Testcase 268: OK!
+INFO: Testcase 269: OK!
+INFO: Testcase 270: OK!
+INFO: Testcase 271: OK!
+INFO: Testcase 272: OK!
+INFO: Testcase 273: OK!
+INFO: Testcase 274: OK!
+INFO: Testcase 275: OK!
+INFO: Testcase 276: OK!
+INFO: Testcase 277: OK!
+INFO: Testcase 278: OK!
+INFO: Testcase 279: OK!
 Testsuite done!
-Ran 203 Tests
-202 Tests succeded
-1 Tests failed
+Ran 279 Tests
+279 Tests succeded
+0 Tests failed

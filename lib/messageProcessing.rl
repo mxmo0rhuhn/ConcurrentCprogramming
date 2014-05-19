@@ -116,7 +116,7 @@ struct protocoll {
 # Helpers that collect strings
   length = digit+ >init $append_length %term_length;
   filename = (alnum | punct)+ >init $append_filename %term_filename;
-  content = (alnum | space | punct )+ >init $append_content %term_content;
+  content = (alnum | ' ' | punct )+ >init $append_content %term_content;
 
 # action definitions
   action list { return list_files(file_list); }
