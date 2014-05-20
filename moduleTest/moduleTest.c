@@ -40,8 +40,6 @@ void runTestcase(const char *input, const char *expected) {
 
   write_to_socket(sock, input);
 
-  // sleep since the requests went to fast and randomly crashed
-//  sleep(1);
   char *buffer_ptr[0];
 
   size_t received_msg_size = read_from_socket(sock, buffer_ptr);
@@ -62,6 +60,8 @@ void runTestcase(const char *input, const char *expected) {
 
   free(*buffer_ptr);
   close(sock);
+  // sleep since the requests went to fast and randomly crashed
+  //sleep(1);
 }
 
 void create_real_long_String(size_t len, char **result, char c) {

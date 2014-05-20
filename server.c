@@ -1,4 +1,5 @@
 // TODO Concurrency tests
+// TODO Default Port in Server
 // TODO Logging Config
 //      - Central method and help text generator
 // TODO Diffrent Locks for Content and everything else
@@ -78,7 +79,6 @@ void *handleRequest(void *input) {
   log_debug("handleRequest recv payload->socket = %d",payload->socket);
   // Receive command from client 
   size_t received_msg_size = read_from_socket(payload->socket, buffer_ptr);
-  handle_error(received_msg_size, "recive failed", THREAD_EXIT);
   log_debug("Thread %ld: Recived: '%s'", threadID, *buffer_ptr);
 
   char *return_msg = handle_message(received_msg_size, *buffer_ptr, payload->file_list);

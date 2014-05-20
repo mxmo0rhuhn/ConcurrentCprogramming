@@ -196,7 +196,7 @@ size_t read_from_socket(int client_socket, char **result) {
   size_t bytes_received = 0;
 
   /* Receive up to the read_len bytes from the sender */
-  bytes_received = read(client_socket, buffer, message_max_len);
+  bytes_received = recv(client_socket, buffer, message_max_len,0);
   if (bytes_received <= 0) {
     log_error("recv() failed or connection closed prematurely");
     close(client_socket);
@@ -215,7 +215,7 @@ void write_to_socket(int client_socket, const char *str) {
   int len = strlen(str);
 
   log_debug("write_string client_socket = %d",client_socket);
-  size_t partial_len = write(client_socket, str, len);
+  size_t partial_len = send(client_socket, str, len, 0);
   if (partial_len != len) {
     log_error("Send message to client failed");
     close(client_socket);
