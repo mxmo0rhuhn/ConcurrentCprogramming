@@ -98,22 +98,27 @@ void handle_error(long return_code, const char *msg, enum exit_type et);
  */
 int create_if_missing(const char *pathname, mode_t mode);
 
-/* 
- * the caller has to free the buffer, unless ulen == 0 
+/**
+ * Creates a socket that is bound to the given port and ist listening vor incomming
+ * connections on it
+ **/
+int create_server_socket(int port_number) ;
+
+/**
+ * connects to a server on the given IP and port 
  */
-size_t read_and_store_string(int client_socket, char **result) ;
+int create_client_socket(int server_port, char *server_ip) ;
 
 /* 
- * transmit a string over a socket or pipe connnection
- * if len is given it is assumed to be the lenght of the string
- * if it is -1, the length is found out with strlen()
- * The length of string is transmitted first as 4 byte unsigned integer,
- * followed by the string itself.
- * @param client_socket  a socket or pipe.  Could be a file also.
- * @param str string to be transmitted
- * @param len length of string to be transmitted
+ * Recive a message via TCP/IP over a given socket
+ * the caller has to free the buffer for the result
  */
-void write_string(int client_socket, const char *str, size_t len) ;
+size_t read_from_socket(int client_socket, char **result) ;
+
+/* 
+ * Send a message via TCP/IP over a given socket
+ */
+void write_to_socket(int client_socket, const char *str);
 
 /*
  * Joins two strings with a given seperator and returns the concatinated string

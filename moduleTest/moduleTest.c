@@ -36,27 +36,15 @@ int num_testcases_fail;
 void runTestcase(const char *input, const char *expected) {
   num_testcases++;
 
-  struct sockaddr_in server_address; 
-  int sock = socket(PF_INET, SOCK_STREAM, IPPROTO_TCP);
-  handle_error(sock, "socket() failed", PROCESS_EXIT);
+  int sock = create_client_socket(server_port, server_ip);
 
-  memset(&server_address, 0, sizeof(server_address));     
-  server_address.sin_family      = AF_INET;             
-  server_address.sin_addr.s_addr = inet_addr(server_ip);   
-  server_address.sin_port        = htons(server_port); 
-
-  int retcode = connect(sock, (struct sockaddr *) &server_address, 
-      sizeof(server_address));
-  handle_error(retcode, "connect() failed\n", PROCESS_EXIT);
-
-  write_string(sock, input, -1);
+  write_to_socket(sock, input);
 
   // sleep since the requests went to fast and randomly crashed
-  sleep(1);
+//  sleep(1);
   char *buffer_ptr[0];
 
-  size_t received_msg_size = read_and_store_string(sock, buffer_ptr);
-  handle_error(received_msg_size, "recive failed", THREAD_EXIT);
+  size_t received_msg_size = read_from_socket(sock, buffer_ptr);
 
   int result = strcmp(*buffer_ptr, expected);
 
@@ -71,8 +59,8 @@ void runTestcase(const char *input, const char *expected) {
     
     num_testcases_fail++;  
   }
-  free(*buffer_ptr);
 
+  free(*buffer_ptr);
   close(sock);
 }
 

@@ -75,17 +75,19 @@ void *handleRequest(void *input) {
 
   char *buffer_ptr[0];
 
+  log_debug("handleRequest recv payload->socket = %d",payload->socket);
   // Receive command from client 
-  size_t received_msg_size = read_and_store_string(payload->socket, buffer_ptr);
+  size_t received_msg_size = read_from_socket(payload->socket, buffer_ptr);
   handle_error(received_msg_size, "recive failed", THREAD_EXIT);
   log_debug("Thread %ld: Recived: '%s'", threadID, *buffer_ptr);
 
   char *return_msg = handle_message(received_msg_size, *buffer_ptr, payload->file_list);
 
   log_info("Thread %ld: Responding: '%s'", threadID, return_msg);
-  write_string(payload->socket, return_msg, -1);
+  write_to_socket(payload->socket, return_msg);
 
   // Close client socket 
+  log_debug("handleRequest close payload->socket = %d",payload->socket);
   close(payload->socket);    
   free(*buffer_ptr);
 
@@ -101,32 +103,15 @@ void *createSocketListener(void *input) {
   Payload *nextListEntry = malloc(sizeof(Payload));
   pthread_once_t once = PTHREAD_ONCE_INIT;
 
-  // Create socket for incoming connections 
-  int server_socket;                    
-  struct sockaddr_in server_address; 
+  int server_socket = create_server_socket(listenerPayload->port_number);
   unsigned int client_address_len = sizeof(nextListEntry->client_address);
-
-  // Construct local address structure 
-  memset(&server_address, 0, sizeof(server_address));   
-  server_address.sin_family = AF_INET;               
-  server_address.sin_addr.s_addr = htonl(INADDR_ANY); 
-  server_address.sin_port = htons(listenerPayload->port_number);      
-
-  // Bind to the local address 
-  server_socket = socket(PF_INET, SOCK_STREAM, IPPROTO_TCP);
-  handle_error(server_socket, "socket() failed", PROCESS_EXIT);
-  int retcode = bind(server_socket, (struct sockaddr *) &server_address, sizeof(server_address));
-  handle_error(retcode, "bind() failed", PROCESS_EXIT);
-
-  // Mark the socket so it will listen for incoming connections 
-  retcode = listen(server_socket, MAX_PENDING_CONNECTIONS);
-  handle_error(retcode, "listen() failed", PROCESS_EXIT);
 
   // Run forever 
   while (TRUE) { 
     log_debug("Accept - Payload: %p", nextListEntry);
     nextListEntry->thread = malloc(sizeof(pthread_t));
     log_debug("allocated thread: %p", nextListEntry->thread);
+
     nextListEntry->file_list = listenerPayload->file_list;
 
     // Wait for a client to connect 
@@ -135,13 +120,16 @@ void *createSocketListener(void *input) {
         , (struct sockaddr *)&(nextListEntry->client_address) 
         , &(client_address_len));
     handle_error(nextListEntry->socket, "accept() failed", PROCESS_EXIT);
+
     log_info("Socket Listener: New connection accepted");
+    log_debug("accept nextListEntry->Socket = %d",nextListEntry->socket);
 
     int retcode = pthread_create(nextListEntry->thread , NULL, handleRequest, nextListEntry);
     handle_thread_error(retcode, "Create Thread", PROCESS_EXIT);
 
     appendListElement(listenerPayload->threadList,(void *) &nextListEntry, sizeof(Payload), "NoName");
   }
+  close(server_socket);
   // Should never happen!
   log_error("Thread %ld: Bye Bye from Socket Listener - ERROR!", threadID );  
   return (void *) -1;

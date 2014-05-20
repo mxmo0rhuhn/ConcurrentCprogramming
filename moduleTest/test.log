@@ -1,0 +1,8 @@
+DEBUG: ---------------------------------------------------
+DEBUG: garbage as input
+ERROR: connect() failed
+
+ERROR: return_code=-1
+errno=111
+message=Connection refused
+

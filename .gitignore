@@ -23,3 +23,6 @@ doc/*
 *.exe
 *.out
 *.app
+test
+run
+client

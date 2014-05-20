@@ -66,7 +66,6 @@ int main(int argc, char *argv[]) {
   }
 
   int sock;                        
-  struct sockaddr_in server_address; 
   unsigned short server_port = 7000;  
   char *server_ip = argv[1];             
   int interactive = TRUE; 
@@ -113,18 +112,6 @@ int main(int argc, char *argv[]) {
 
   while (firstRun || interactive ) {
 
-    sock = socket(PF_INET, SOCK_STREAM, IPPROTO_TCP);
-    handle_error(sock, "socket() failed", PROCESS_EXIT);
-
-    memset(&server_address, 0, sizeof(server_address));     
-    server_address.sin_family      = AF_INET;             
-    server_address.sin_addr.s_addr = inet_addr(server_ip);   
-    server_address.sin_port        = htons(server_port); 
-
-    retcode = connect(sock, (struct sockaddr *) &server_address, 
-                             sizeof(server_address));
-    handle_error(retcode, "connect() failed\n", PROCESS_EXIT);
-
     char *send;
     if (interactive  != TRUE){
       send = join_with_seperator(cmd, "", "\n");
@@ -160,14 +147,16 @@ int main(int argc, char *argv[]) {
       
       send = line;
     }
-    log_debug("Sendling: '%s'\n", send);
-    write_string(sock, send, -1);
 
-    sleep(1);
+    sock = create_client_socket(server_port, server_ip);
+
+    log_debug("Sendling: '%s'\n", send);
+    write_to_socket(sock, send);
+
     char *buffer_ptr[0];
 
     // Receive command from server 
-    size_t received_msg_size = read_and_store_string(sock, buffer_ptr);
+    size_t received_msg_size = read_from_socket(sock, buffer_ptr);
     handle_error(received_msg_size, "recive failed", THREAD_EXIT);
 
     printf("Response=%s \n", *buffer_ptr);
@@ -176,6 +165,5 @@ int main(int argc, char *argv[]) {
     close(sock);
     firstRun = FALSE;
   }
-  sleep(1);
   exit(0);
 }

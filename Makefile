@@ -3,7 +3,7 @@ LIBS=-lpthread -ltermpaper
 
 SERVER_FILE=server.c
 CLIENT_FILE=client.c
-TEST_FILE=test/unitTest.c
+TEST_FILE=moduleTest/moduleTest.c
 
 SERVER_OUT=run
 CLIENT_OUT=client
@@ -12,7 +12,11 @@ TEST_OUT=test
 all: test run 
 
 clean:
-	rm -f lib/*.a lib/*.o test/*.o $(CLIENT_OUT) $(SERVER_OUT) 
+	rm -fv lib/*.a 
+	rm -fv lib/*.o 
+	rm -fv $(CLIENT_OUT) 
+	rm -fv $(SERVER_OUT) 
+	rm -fv $(TEST_OUT) 
 
 # the Server 
 run: $(SERVER_FILE) lib/libtermpaper.a 

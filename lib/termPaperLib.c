@@ -107,7 +107,6 @@ void handle_thread_error(int retcode, const char *msg, enum exit_type et) {
   }
 }
 
-
 /* 
  * helper function for dealing with errors 
  */
@@ -143,8 +142,54 @@ int is_help_requested(int argc, char *argv[]) {
         || strcmp(argv[1], "--help") == 0));
 }
 
-size_t read_and_store_string(int client_socket, char **result) {
+int create_client_socket(int server_port, char *server_ip) {
+  struct sockaddr_in server_address; 
 
+  unsigned int address_len = sizeof(server_address);
+
+  int client_socket = socket(AF_INET, SOCK_STREAM, IPPROTO_TCP);
+  handle_error(client_socket, "socket() failed", PROCESS_EXIT);
+
+  memset(&server_address, 0, address_len);
+  server_address.sin_family = AF_INET;             
+  server_address.sin_addr.s_addr = inet_addr(server_ip);   
+  server_address.sin_port = htons(server_port); 
+
+  int retcode = connect(client_socket, (struct sockaddr *) &server_address, address_len);
+  handle_error(retcode, "connect() failed\n", PROCESS_EXIT);
+
+  return client_socket;
+}
+
+int create_server_socket(int port_number) {
+  // Create socket for incoming connections 
+  int server_socket;                    
+  struct sockaddr_in server_address; 
+  unsigned int address_len = sizeof(server_address);
+
+  // Construct local address structure 
+  memset(&server_address, 0, sizeof(server_address));   
+  server_address.sin_family = AF_INET;               
+  server_address.sin_addr.s_addr = htonl(INADDR_ANY); 
+  server_address.sin_port = htons(port_number);      
+
+  // Bind to the local address 
+  server_socket = socket(AF_INET, SOCK_STREAM, IPPROTO_TCP);
+  handle_error(server_socket, "socket() failed", PROCESS_EXIT);
+
+  int retcode = bind(server_socket, (struct sockaddr *) &server_address, address_len);
+  handle_error(retcode, "bind() failed", PROCESS_EXIT);
+
+  // Mark the socket so it will listen for incoming connections 
+  retcode = listen(server_socket, MAX_PENDING_CONNECTIONS);
+  handle_error(retcode, "listen() failed", PROCESS_EXIT);
+
+  return server_socket;
+}
+
+size_t read_from_socket(int client_socket, char **result) {
+
+  log_debug("read_and_store_string client_socket = %d",client_socket);
   // CONTENT + FILENAME + other stuff 
   size_t message_max_len = MAX_MSG_LEN;
   char buffer[message_max_len+1];
@@ -154,23 +199,26 @@ size_t read_and_store_string(int client_socket, char **result) {
   bytes_received = read(client_socket, buffer, message_max_len);
   if (bytes_received <= 0) {
     log_error("recv() failed or connection closed prematurely");
+    close(client_socket);
     exit_by_type(THREAD_EXIT);
   }
   //bad people may send strings that are not \000 terminated
   buffer[bytes_received] = '\000';
+
   *result = (char *) malloc(bytes_received+1);
   strncpy(*result, buffer, bytes_received+1);
+
   return bytes_received ;
 }
 
-void write_string(int client_socket, const char *str, size_t len) {
-  if (len == -1) {
-    len = strlen(str);
-  }
+void write_to_socket(int client_socket, const char *str) {
+  int len = strlen(str);
 
+  log_debug("write_string client_socket = %d",client_socket);
   size_t partial_len = write(client_socket, str, len);
   if (partial_len != len) {
     log_error("Send message to client failed");
+    close(client_socket);
     exit_by_type(THREAD_EXIT);
   }
 }
