@@ -104,7 +104,7 @@ void *createSocketListener(void *input) {
   log_info("Thread %ld: Hello from Socket Listener", threadID );  
 
   ListenerPayload *listenerPayload = (ListenerPayload *) input;
-  Payload *nextListEntry = malloc(sizeof(Payload));
+  Payload *nextListEntry;
   pthread_once_t once = PTHREAD_ONCE_INIT;
 
   int server_socket = create_server_socket(listenerPayload->port_number);
@@ -113,6 +113,7 @@ void *createSocketListener(void *input) {
   // Run forever 
   while (TRUE) { 
     log_debug("Accept - Payload: %p", nextListEntry);
+    nextListEntry = malloc(sizeof(Payload));
     nextListEntry->thread = malloc(sizeof(pthread_t));
     log_debug("allocated thread: %p", nextListEntry->thread);
 
