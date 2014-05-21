@@ -55,7 +55,8 @@ void usage(char *programName, char *msg) {
   }
   printf("Usage:\n");
 
-  char *usage =  "<port> \n";
+  char *usage =  "";
+  char *port_help = get_port_help(&usage);
   char *log_help = get_logging_help(&usage);
   printf("%s %s\n\n", programName, usage);
 
@@ -63,7 +64,7 @@ void usage(char *programName, char *msg) {
   printf("Will start a virtual file server that accepts connections via\n");
   printf("TCP\n\n\n");
 
-  printf("<port> Mandatory: Starts the server listening on the given port\n\n");
+  printf("%s\n", port_help);
   printf("%s\n\n", log_help);
 
   printf("(c) Max Schrimpf - ZHAW 2014\n");
@@ -201,7 +202,7 @@ int main ( int argc, char *argv[] ) {
   pthread_t socketListenerThread;
 
   ListenerPayload socketListenerPayload;
-  socketListenerPayload.port_number = atoi(argv[1]); 
+  socketListenerPayload.port_number = get_port_with_default(argc, argv, 7000);
   socketListenerPayload.threadList = threadList;
   socketListenerPayload.file_list = file_list;
 

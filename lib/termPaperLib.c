@@ -338,3 +338,30 @@ char *get_logging_help(char **usage_text) {
   return help_text;
 }
 
+char *get_port_help(char **usage_text) {
+  *usage_text=join_with_seperator(*usage_text, "[-p Port]", " ");
+
+  char *help_text = join_with_seperator( 
+      "[-p Port] Optional: Tries to connect to a server on the given port.",
+      "           Default: 7000\n", "\n");
+
+  return help_text;
+}
+
+unsigned short get_port_with_default(int argc, char *argv[], unsigned short default_port) {
+  int to_return = default_port;
+
+  int i;
+  for (i = 1; i < argc; i++)  {
+    if (strcmp(argv[i], "-p") == 0)  {
+      if (i + 2 <= argc )  {
+        i++;
+        to_return = atoi(argv[i]);  
+      } else {
+        printf("please provide a port if you're using -p");
+      }
+    } 
+  }
+  return to_return;
+}
+

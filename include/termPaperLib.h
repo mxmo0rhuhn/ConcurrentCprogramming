@@ -69,6 +69,16 @@ void log_info(const char *msg, ...) ;
 void log_error(const char *msg, ...) ;
 
 /**
+ * Parses the commandline parameters for a port
+ **/
+unsigned short get_port_with_default(int argc, char *argv[], unsigned short default_port);
+
+/**
+ * returns a help text for the port parameter
+ **/
+char *get_port_help(char **usage_text);
+
+/**
  * Parses the commandline parameters for logging properties
  **/
 void get_logging_properties(int argc, char *argv[]);

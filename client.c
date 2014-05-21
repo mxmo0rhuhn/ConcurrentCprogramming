@@ -31,7 +31,8 @@ void usage(const char *argv0, const char *msg) {
   if (msg != NULL && strlen(msg) > 0) {
     printf("%s\n\n", msg);
   }
-  char *usage = "<Server IP> [-c Line1] [-C Line2] [-p Port]";
+  char *usage = "<Server IP> [-c Line1] [-C Line2]";
+  char *port_help = get_port_help(&usage);
   char *log_help = get_logging_help(&usage);
   printf("Usage:\n");
   printf("%s %s\n\n", argv0, usage);
@@ -51,8 +52,7 @@ void usage(const char *argv0, const char *msg) {
   printf("                     This option disables the interactive mode\n\n");
   printf("[-C Line2] Optional: A second line for the command - only possible\n");
   printf("                     if a first line is provided\n\n");
-  printf("[-p Port] Optional: Tries to connect to a server on the given port.\n");
-  printf("           Default: 7000\n\n");
+  printf("%s\n", port_help);
   printf("%s\n\n", log_help);
 
   printf("(c) Max Schrimpf - ZHAW 2014\n");
@@ -70,9 +70,10 @@ int main(int argc, char *argv[]) {
     usage(argv[0], "wrong number of arguments please provide an IP at least");
   }
 
-  int sock;                        
-  unsigned short server_port = 7000;  
   char *server_ip = argv[1];             
+  int sock;                        
+  unsigned short server_port = get_port_with_default(argc, argv, 7000);
+  get_logging_properties(argc, argv);
   int interactive = TRUE; 
   int firstRun = TRUE;
   char *cmd;
@@ -80,14 +81,7 @@ int main(int argc, char *argv[]) {
 
   int i;
   for (i = 2; i < argc; i++)  {
-    if (strcmp(argv[i], "-p") == 0)  {
-      if (i + 2 <= argc )  {
-        i++;
-        server_port = atoi(argv[i]);  
-      } else {
-        usage(argv[0], "please provide a port if you're using -p");
-      }
-    } else if (strcmp(argv[i], "-c") == 0)  {
+    if (strcmp(argv[i], "-c") == 0)  {
       if (i + 2 <= argc )  {
 
         interactive = FALSE;
@@ -111,7 +105,6 @@ int main(int argc, char *argv[]) {
         usage(argv[0], "please provide a CMD if you're using -c");
       }
     }
-   get_logging_properties(argc, argv);
   }
 
   while (firstRun || interactive ) {

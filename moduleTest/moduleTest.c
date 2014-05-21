@@ -371,7 +371,8 @@ void usage(const char *argv0, const char *msg) {
   }
   printf("Usage:\n");
 
-  char *usage = "<Server IP> [-p Port]";
+  char *usage = "<Server IP>";
+  char *port_help = get_port_help(&usage);
   char *log_help = get_logging_help(&usage);
   printf("%s %s\n\n", argv0, usage);
 
@@ -379,8 +380,7 @@ void usage(const char *argv0, const char *msg) {
   printf("A running server at the given address is needed\n\n\n");
 
   printf("<Server IP> Mandatory: Tries to connect to a server with the given IP\n\n");
-  printf("[-p Port] Optional: Tries to connect to a server on the given port.\n");
-  printf("          Default: 7000\n\n");
+  printf("%s\n", port_help);
   printf("%s\n\n", log_help);
 
   printf("(c) Max Schrimpf - ZHAW 2014\n");
