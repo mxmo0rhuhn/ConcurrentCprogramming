@@ -61,7 +61,7 @@ void runTestcase(const char *input, const char *expected) {
   free(*buffer_ptr);
   close(sock);
   // sleep since the requests went to fast and randomly crashed
-  //sleep(1);
+  sleep(1);
 }
 
 void create_real_long_String(size_t len, char **result, char c) {
@@ -370,13 +370,19 @@ void usage(const char *argv0, const char *msg) {
     printf("%s\n\n", msg);
   }
   printf("Usage:\n");
-  printf("%s <Server IP> [-p Port]\n", argv0);
-  printf("<Server IP> Mandatory: Tries to connect to a server with the given IP\n");
-  printf("[-P Port] Optional: Tries to connect to a server on the given port.\n");
-  printf("          Default: 7000\n\n");
+
+  char *usage = "<Server IP> [-p Port]";
+  char *log_help = get_logging_help(&usage);
+  printf("%s %s\n\n", argv0, usage);
 
   printf("Executes various tests on the fileserver\n");
-  printf("A running server at the given address is needed\n\n");
+  printf("A running server at the given address is needed\n\n\n");
+
+  printf("<Server IP> Mandatory: Tries to connect to a server with the given IP\n\n");
+  printf("[-p Port] Optional: Tries to connect to a server on the given port.\n");
+  printf("          Default: 7000\n\n");
+  printf("%s\n\n", log_help);
+
   printf("(c) Max Schrimpf - ZHAW 2014\n");
   exit(1);
 }
@@ -394,9 +400,6 @@ int main(int argc, char *argv[]) {
 
   server_port = 7000;  
   server_ip = argv[1];             
-  num_testcases = 0;
-  num_testcases_success = 0;
-  num_testcases_fail = 0;
 
   int i;
   for (i = 2; i < argc; i++)  {
@@ -407,15 +410,18 @@ int main(int argc, char *argv[]) {
       } else {
         usage(argv[0], "please provide a port if you're using -p");
       }
-    } else {
-      usage(argv[0], "unknown input");
-    }
+    } 
   }
+  get_logging_properties(argc, argv);
+
+  num_testcases = 0;
+  num_testcases_success = 0;
+  num_testcases_fail = 0;
 
   runTestcases();
 
-  printf("Testsuite done!\n");
-  printf("Ran %d Tests\n", num_testcases);
-  printf("%d Tests succeded\n", num_testcases_success);
-  printf("%d Tests failed\n", num_testcases_fail);
+  log_info("Testsuite done!");
+  log_info("Ran %d Tests", num_testcases);
+  log_info("%d Tests succeded", num_testcases_success);
+  log_info("%d Tests failed", num_testcases_fail);
 }

@@ -71,12 +71,12 @@ void log_error(const char *msg, ...) ;
 /**
  * Parses the commandline parameters for logging properties
  **/
-int get_logging_properties(int argc, char *argv[]);
+void get_logging_properties(int argc, char *argv[]);
 
 /**
  * returns a help text for the possible logging options
  **/
-char *get_logging_help();
+char *get_logging_help(char **usage_text);
 
 /* 
  * check if --help or similar is indicated 
@@ -92,11 +92,6 @@ void handle_thread_error(int retcode, const char *msg, enum exit_type et);
  * helper function for error handling
  */
 void handle_error(long return_code, const char *msg, enum exit_type et);
-
-/* 
- * creates a file if it does not exist 
- */
-int create_if_missing(const char *pathname, mode_t mode);
 
 /**
  * Creates a socket that is bound to the given port and ist listening vor incomming

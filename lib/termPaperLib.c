@@ -21,49 +21,21 @@
  */
 
 #include <errno.h> 
-#include <fcntl.h> 
 #include <pthread.h> 
-#include <stdbool.h>
 #include <stdio.h> 
 #include <stdlib.h> 
 #include <string.h> 
-#include <sys/stat.h> 
-#include <sys/types.h> 
-#include <arpa/inet.h>  /* for sockaddr_in and inet_addr() and inet_ntoa() */ 
+#include <arpa/inet.h>  
 #include <unistd.h> 
 #include <stdarg.h>
 
 #include <termPaperLib.h>
 
-void log_info(const char *msg, ...) {
-  // this len is a real vulnerability => keep it long
-  char logLine[MAX_MSG_LEN+MAX_BUFLEN];
-  va_list argptr;
-  va_start(argptr, msg);
-  vsprintf(logLine, msg, argptr);
-  va_end(argptr);
-  printf("INFO: %s\n", logLine);
-}
-
-void log_debug(const char *msg, ...) {
-  // this len is a real vulnerability => keep it long
-  char logLine[MAX_MSG_LEN+MAX_BUFLEN];
-  va_list argptr;
-  va_start(argptr, msg);
-  vsprintf(logLine, msg, argptr);
-  va_end(argptr);
-  printf("DEBUG: %s\n", logLine);
-}
-
-void log_error(const char *msg, ...) {
-  // this len is a real vulnerability => keep it long
-  char logLine[MAX_MSG_LEN+MAX_BUFLEN];
-  va_list argptr;
-  va_start(argptr, msg);
-  vsprintf(logLine, msg, argptr);
-  va_end(argptr);
-  printf("ERROR: %s\n", logLine);
-}
+// Found no other way to store these parameters
+enum logging_type debug_type;
+enum logging_type info_type;
+enum logging_type error_type;
+FILE *log_file;
 
 void exit_by_type(enum exit_type et) {
   switch (et) {
@@ -83,19 +55,140 @@ void exit_by_type(enum exit_type et) {
   }
 }
 
+void log_by_type(const char* to_log, enum logging_type lt) {
+  switch (lt) {
+    case NONE:
+      break;
+    case WRITE_TO_FILE:
+      fprintf(log_file, "%s\n", to_log);
+      fflush(log_file);
+      break;
+    case WRITE_TO_STDOUT:
+      printf("%s\n", to_log);
+      break;
+    case WRITE_TO_STDERR:
+      fprintf(stderr, "%s\n", to_log);
+      break;
+    default:
+      printf("Unknown logging_type: %d", lt);
+      exit(2);
+      break;
+  }
+}
+
+void log_debug(const char *msg, ...) {
+  // this len is a real vulnerability => keep it long
+  char log_line[MAX_MSG_LEN+MAX_BUFLEN];
+  va_list argptr;
+  va_start(argptr, msg);
+  vsprintf(log_line, msg, argptr);
+  va_end(argptr);
+
+  log_by_type(join_with_seperator("DEBUG:", log_line, " "), debug_type);
+}
+void log_info(const char *msg, ...) {
+  // this len is a real vulnerability => keep it long
+  char log_line[MAX_MSG_LEN+MAX_BUFLEN];
+  va_list argptr;
+  va_start(argptr, msg);
+  vsprintf(log_line, msg, argptr);
+  va_end(argptr);
+
+  log_by_type(join_with_seperator("INFO:", log_line, " "), info_type);
+}
+
+void log_error(const char *msg, ...) {
+  // this len is a real vulnerability => keep it long
+  char log_line[MAX_MSG_LEN+MAX_BUFLEN];
+  va_list argptr;
+  va_start(argptr, msg);
+  vsprintf(log_line, msg, argptr);
+  va_end(argptr);
+
+  log_by_type(join_with_seperator("ERROR:", log_line, " "), error_type);
+}
+
+int open_logfile(const char *pathname) {
+  if (log_file == NULL) {
+
+    pathname = join_with_seperator(pathname, ".log", "");
+    log_file = fopen(pathname, "w");
+    if (log_file == NULL) {
+      printf("something went wrong while opening the log file '%s' - exiting\n", pathname);
+      exit_by_type(PROCESS_EXIT);
+    }
+  }
+}
+
+enum logging_type get_log_type(int i, char *filename) {
+  switch (i) {
+    case 0:
+      return NONE;
+      break;
+    case 1:
+      open_logfile(filename);
+      return WRITE_TO_FILE;
+      break;
+    case 2:
+      return WRITE_TO_STDOUT;
+      break;
+    case 3:
+      return WRITE_TO_STDERR;
+      break;
+    default:
+      log_error("Unknown log_level: %d", i);
+      exit(2);
+      break;
+  }
+}
+
+void get_logging_properties(int argc, char *argv[]) {
+  debug_type = NONE;
+  info_type = WRITE_TO_STDOUT;
+  error_type = WRITE_TO_STDERR;
+  log_file = NULL;
+
+  int i;
+  for (i = 1; i < argc; i++)  {
+    if (strcmp(argv[i], "-d") == 0)  {
+      if (i + 2 <= argc )  {
+        i++;
+        debug_type = get_log_type(atoi(argv[i]), argv[0]);
+      } else {
+        printf("please provide a logging level for DEBUG for help use -h");
+      }
+    } else if (strcmp(argv[i], "-i") == 0)  {
+      if (i + 2 <= argc )  {
+        i++;
+        info_type = get_log_type(atoi(argv[i]), argv[0]);
+      } else {
+        printf("please provide a logging level for INFO for help use -h");
+      }
+    } else if (strcmp(argv[i], "-e") == 0)  {
+      if (i + 2 <= argc )  {
+        i++;
+        error_type = get_log_type(atoi(argv[i]), argv[0]);
+      } else {
+        printf("please provide a logging level for ERROR for help use -h");
+      }
+    } 
+  }
+}
+
 /* 
  * helper function for dealing with errors 
  */
-void handle_error_myerrno(long return_code, int myerrno, 
-    const char *msg, enum exit_type et) {
+void handle_error_myerrno(long return_code, int myerrno, const char *msg, 
+                            enum exit_type et) {
   if (return_code < 0) {
     const char *error_str = strerror(myerrno);
 
     if (msg != NULL) {
-      log_error(msg);
+      log_error("%s", msg);
     } 
-    log_error("return_code=%ld\nerrno=%d\nmessage=%s\n", 
-        return_code, myerrno, error_str);
+    log_error("Return code=%ld", return_code);
+    log_error("Errno=%d", error_str);
+    log_error("Message=%s", myerrno);
 
     exit_by_type(et);
   }
@@ -113,22 +206,6 @@ void handle_thread_error(int retcode, const char *msg, enum exit_type et) {
 void handle_error(long return_code, const char *msg, enum exit_type et) {
   int myerrno = errno;
   handle_error_myerrno(return_code, myerrno, msg, et);
-}
-
-/* 
- * create a given file if it is not there 
- */
-int create_if_missing(const char *pathname, mode_t mode) {
-  int fd = creat(pathname, mode);
-  if (fd < 0) {
-    char s[1024];
-    sprintf(s, "could not create file=\"%s\".", pathname);
-    handle_error(fd, s, NO_EXIT);
-    return fd;
-  }
-  int retcode = close(fd);
-  handle_error(fd, "close", NO_EXIT);
-  return retcode;
 }
 
 /* 
@@ -222,7 +299,7 @@ void write_to_socket(int client_socket, const char *str) {
     exit_by_type(THREAD_EXIT);
   }
 }
-  
+
 char *join_with_seperator(const char *str1, const char *str2, const char *sep) {
 
   size_t str1_len = strlen(str1);
@@ -239,3 +316,25 @@ char *join_with_seperator(const char *str1, const char *str2, const char *sep) {
 
   return tmp;
 }
+void strn_add(char** original, char *append) {
+  *original = join_with_seperator(*original, append, "\n");
+}
+
+char *get_logging_help(char **usage_text) {
+  *usage_text=join_with_seperator(*usage_text, "[-d Out] [-i Out] [-e Out]", " ");
+
+  char *help_text = join_with_seperator( 
+                       "[-d Loglevel] Optional: Alter the output for DEBUG messages.",
+                       "               Default: No logging\n" , "\n" ); 
+  strn_add(&help_text, "[-i Loglevel] Optional: Alter the output for INFO messages.");
+  strn_add(&help_text, "               Default: stdout\n" );
+  strn_add(&help_text, "[-i Loglevel] Optional: Alter the output for ERROR messages.");
+  strn_add(&help_text, "               Default: stderr \n" );
+  strn_add(&help_text, " Possible log Outputs: 0 = No logging" );
+  strn_add(&help_text, "                       1 = Logfile" );
+  strn_add(&help_text, "                       2 = stdout" );
+  strn_add(&help_text, "                       3 = stderr\n" );
+
+  return help_text;
+}
+

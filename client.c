@@ -31,15 +31,10 @@ void usage(const char *argv0, const char *msg) {
   if (msg != NULL && strlen(msg) > 0) {
     printf("%s\n\n", msg);
   }
+  char *usage = "<Server IP> [-c Line1] [-C Line2] [-p Port]";
+  char *log_help = get_logging_help(&usage);
   printf("Usage:\n");
-  printf("%s <Server IP> [-c Line1] [-C Line2] [-p Port]\n", argv0);
-  printf("<Server IP> Mandatory: Tries to connect to a server with the given IP\n");
-  printf("[-c Line1] Optional: A command that should be send to the server.\n");
-  printf("                     This option disables the interactive mode\n");
-  printf("[-C Line2] Optional: A second line for the command - only possible\n");
-  printf("                     if a first line is provided\n");
-  printf("[-P Port] Optional: Tries to connect to a server on the given port.\n");
-  printf("          Default: 7000\n\n");
+  printf("%s %s\n\n", argv0, usage);
 
   printf("Connects to a server and provides an interactive multiline command\n");
   printf("interface. You can simply start a new line with \\n (Enter)\n");
@@ -49,7 +44,17 @@ void usage(const char *argv0, const char *msg) {
   printf("You may also provide a command that is executed without an interactive\n");
   printf("command interface using the [-c Line] option\n");
   printf("If you want to specify a second line that is send to the server after\n");
-  printf("-c you can use -C \n\n");
+  printf("-c you can use -C \n\n\n");
+
+  printf("<Server IP> Mandatory: Tries to connect to a server with the given IP\n\n");
+  printf("[-c Line1] Optional: A command that should be send to the server.\n");
+  printf("                     This option disables the interactive mode\n\n");
+  printf("[-C Line2] Optional: A second line for the command - only possible\n");
+  printf("                     if a first line is provided\n\n");
+  printf("[-p Port] Optional: Tries to connect to a server on the given port.\n");
+  printf("           Default: 7000\n\n");
+  printf("%s\n\n", log_help);
+
   printf("(c) Max Schrimpf - ZHAW 2014\n");
   exit(1);
 }
@@ -105,9 +110,8 @@ int main(int argc, char *argv[]) {
       } else {
         usage(argv[0], "please provide a CMD if you're using -c");
       }
-    } else {
-      usage(argv[0], "unknown input");
     }
+   get_logging_properties(argc, argv);
   }
 
   while (firstRun || interactive ) {

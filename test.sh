@@ -1,4 +1,6 @@
 #!/bin/bash
 make test
-./test 127.0.0.1 -p 7000 > moduleTest/test.log
-tail -3 moduleTest/test.log
+rm -fv test.log
+touch test.log
+(./test 127.0.0.1 -p 7000 -i 1) &
+tail -f test.log 

@@ -1,6 +1,5 @@
 // TODO Concurrency tests
 // TODO Default Port in Server
-// TODO Logging Config
 //      - Central method and help text generator
 // TODO Diffrent Locks for Content and everything else
 // TODO Beautification
@@ -56,12 +55,17 @@ void usage(char *programName, char *msg) {
   }
   printf("Usage:\n");
 
-  printf("%s <port> \n", programName);
-  printf("<port> Mandatory: Starts the server listening on the given port\n\n");
+  char *usage =  "<port> \n";
+  char *log_help = get_logging_help(&usage);
+  printf("%s %s\n\n", programName, usage);
 
   printf("Server for the term paper in concurrent C programming\n");
   printf("Will start a virtual file server that accepts connections via\n");
-  printf("TCP\n\n");
+  printf("TCP\n\n\n");
+
+  printf("<port> Mandatory: Starts the server listening on the given port\n\n");
+  printf("%s\n\n", log_help);
+
   printf("(c) Max Schrimpf - ZHAW 2014\n");
 
   exit(1);
@@ -116,8 +120,7 @@ void *createSocketListener(void *input) {
 
     // Wait for a client to connect 
     log_info("Socket Listener: Accepting new connections");
-    nextListEntry->socket = accept(server_socket 
-        , (struct sockaddr *)&(nextListEntry->client_address) 
+    nextListEntry->socket = accept(server_socket , (struct sockaddr *)&(nextListEntry->client_address) 
         , &(client_address_len));
     handle_error(nextListEntry->socket, "accept() failed", PROCESS_EXIT);
 
@@ -183,10 +186,12 @@ int main ( int argc, char *argv[] ) {
     usage(programName, "Help: ");
   }
 
-  if (argc != 2) {
+  if (argc < 2) {
     log_info("found %d arguments", argc - 1);
     usage(programName, "wrong number of arguments");
   }
+  get_logging_properties(argc, argv);
+
   // Creation of the file list
   ConcurrentLinkedList *file_list = newList();
   log_debug("server file_list: %p", file_list);
