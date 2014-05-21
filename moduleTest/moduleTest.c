@@ -61,7 +61,7 @@ void runTestcase(const char *input, const char *expected) {
   free(*buffer_ptr);
   close(sock);
   // sleep since the requests went to fast and randomly crashed
-  sleep(1);
+  //sleep(1);
 }
 
 void create_real_long_String(size_t len, char **result, char c) {

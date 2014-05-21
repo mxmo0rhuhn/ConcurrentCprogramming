@@ -2,4 +2,4 @@
 make clean
 make ragel
 make all
-./run 7000 
+./run -p 7000 

@@ -1,6 +1,4 @@
 // TODO Concurrency tests
-// TODO Default Port in Server
-//      - Central method and help text generator
 // TODO Diffrent Locks for Content and everything else
 // TODO Beautification
 
@@ -97,6 +95,7 @@ void *handleRequest(void *input) {
   free(*buffer_ptr);
 
   log_debug("Thread %ld: Bye Bye", threadID );  
+  free(payload);
   return NULL;
 }
 
@@ -132,6 +131,7 @@ void *createSocketListener(void *input) {
     handle_thread_error(retcode, "Create Thread", PROCESS_EXIT);
 
     appendListElement(listenerPayload->threadList,(void *) &nextListEntry, sizeof(Payload), "NoName");
+    nextListEntry = malloc(sizeof(Payload));
   }
   close(server_socket);
   // Should never happen!
