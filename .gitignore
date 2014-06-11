@@ -29,3 +29,6 @@ client
 
 # Log files
 *.log
+
+# non public file 
+/lib/stacktrace.c

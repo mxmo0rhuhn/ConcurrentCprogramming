@@ -96,7 +96,7 @@ void *handleRequest(void *input) {
 
   log_debug("Thread %ld: Bye Bye", threadID );  
   free(payload);
-  return NULL;
+  pthread_exit(NULL);
 }
 
 void *createSocketListener(void *input) {
@@ -136,7 +136,7 @@ void *createSocketListener(void *input) {
   close(server_socket);
   // Should never happen!
   log_error("Thread %ld: Bye Bye from Socket Listener - ERROR!", threadID );  
-  return (void *) -1;
+  pthread_exit(NULL);
 }
 
 void *cleanUpSocketListener(void *input) {
@@ -177,10 +177,11 @@ void *cleanUpSocketListener(void *input) {
   }
   // Should never happen!
   log_error("Thread %ld: Bye Bye from Cleanup Thread - ERROR!", threadID );  
-  return (void *) -1;
+  pthread_exit(NULL);
 }
 
 int main ( int argc, char *argv[] ) {
+  install_segfault_handler();
   char *programName = argv[0];
 
   if(is_help_requested( argc, argv)) {

@@ -33,9 +33,7 @@ int num_testcases;
 int num_testcases_success;
 int num_testcases_fail;
 
-void runTestcase(const char *input, const char *expected) {
-  num_testcases++;
-
+int runConcurrentTestcase(const char *input, const char *expected) {
   int sock = create_client_socket(server_port, server_ip);
 
   write_to_socket(sock, input);
@@ -48,20 +46,25 @@ void runTestcase(const char *input, const char *expected) {
 
   if(result == 0) {
     log_info("Testcase %zu: OK!", num_testcases);
-    num_testcases_success++;  
   } else {
     log_info("Testcase %zu: FAILED!", num_testcases);
     log_debug("send: '%s'", input);
     log_debug("Expected: '%s'", expected);
     log_debug("Recived : '%s'", *buffer_ptr);
-    
-    num_testcases_fail++;  
   }
 
   free(*buffer_ptr);
   close(sock);
-  // sleep since the requests went to fast and randomly crashed
-  //sleep(1);
+}
+
+void runTestcase(const char *input, const char *expected) {
+  num_testcases++;
+
+  if(runConcurrentTestcase(input, expected) == 0) {
+    num_testcases_success++;  
+  } else {
+    num_testcases_fail++;  
+  }
 }
 
 void create_real_long_String(size_t len, char **result, char c) {
