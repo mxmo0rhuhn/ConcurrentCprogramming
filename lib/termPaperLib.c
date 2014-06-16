@@ -77,32 +77,32 @@ void log_by_type(const char* to_log, enum logging_type lt) {
 }
 
 void log_debug(const char *msg, ...) {
-  // this len is a real vulnerability => keep it long
-  char log_line[MAX_MSG_LEN+MAX_BUFLEN];
+  // + \000
+  char log_line[MAX_LOG_LEN+1];
   va_list argptr;
   va_start(argptr, msg);
-  vsprintf(log_line, msg, argptr);
+  vsnprintf(log_line, MAX_LOG_LEN, msg, argptr);
   va_end(argptr);
 
   log_by_type(join_with_seperator("DEBUG:", log_line, " "), debug_type);
 }
 void log_info(const char *msg, ...) {
-  // this len is a real vulnerability => keep it long
-  char log_line[MAX_MSG_LEN+MAX_BUFLEN];
+  // + \000
+  char log_line[MAX_LOG_LEN+1];
   va_list argptr;
   va_start(argptr, msg);
-  vsprintf(log_line, msg, argptr);
+  vsnprintf(log_line, MAX_LOG_LEN, msg, argptr);
   va_end(argptr);
 
   log_by_type(join_with_seperator("INFO:", log_line, " "), info_type);
 }
 
 void log_error(const char *msg, ...) {
-  // this len is a real vulnerability => keep it long
-  char log_line[MAX_MSG_LEN+MAX_BUFLEN];
+  // + \000
+  char log_line[MAX_LOG_LEN+1];
   va_list argptr;
   va_start(argptr, msg);
-  vsprintf(log_line, msg, argptr);
+  vsnprintf(log_line, MAX_LOG_LEN, msg, argptr);
   va_end(argptr);
 
   log_by_type(join_with_seperator("ERROR:", log_line, " "), error_type);

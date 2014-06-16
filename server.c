@@ -1,4 +1,5 @@
 // TODO Concurrency tests
+// TODO check mutex destroy
 // TODO Diffrent Locks for Content and everything else
 // TODO Beautification
 
@@ -181,7 +182,6 @@ void *cleanUpSocketListener(void *input) {
 }
 
 int main ( int argc, char *argv[] ) {
-  install_segfault_handler();
   char *programName = argv[0];
 
   if(is_help_requested( argc, argv)) {

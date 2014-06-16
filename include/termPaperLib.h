@@ -46,8 +46,10 @@
 #define MAX_OTHER 15
 
 // max. lenght for any revived or logged string 
-// ATTENTION... may cause a LOT of problems if it is to short
 #define MAX_MSG_LEN (MAX_BUFLEN + MAX_BUFLEN + SIZE_MAX_BUFLEN + MAX_OTHER)
+
+// max. lenght for Logger entries
+#define MAX_LOG_LEN (MAX_MSG_LEN + MAX_BUFLEN)
 
 // max. number of waiting socket connections
 #define MAX_PENDING_CONNECTIONS 100
