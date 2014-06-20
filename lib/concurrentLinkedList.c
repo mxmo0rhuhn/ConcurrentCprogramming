@@ -85,6 +85,9 @@ ConcurrentListElement *removeElement(ConcurrentListElement *element) {
   returnElement(element);
   // Pointer and real content
 
+  int ret = pthread_mutex_destroy(&(element->usageMutex));
+  handle_error(ret, "destroy mutex failed", PROCESS_EXIT);
+
   log_debug("Remove payload: %p", element->payload);
   free(element->payload);
   log_debug("Remove ID: %p", element->ID);
