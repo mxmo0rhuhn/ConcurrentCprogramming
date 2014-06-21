@@ -71,9 +71,19 @@ void log_info(const char *msg, ...) ;
 void log_error(const char *msg, ...) ;
 
 /**
+ * Parses the commandline parameters for a IP
+ **/
+char *get_ip_with_default(int argc, char *argv[]);
+
+/**
+ * returns a help text for the IP parameter
+ **/
+char *get_ip_help(char **usage_text);
+
+/**
  * Parses the commandline parameters for a port
  **/
-unsigned short get_port_with_default(int argc, char *argv[], unsigned short default_port);
+unsigned short get_port_with_default(int argc, char *argv[] );
 
 /**
  * returns a help text for the port parameter

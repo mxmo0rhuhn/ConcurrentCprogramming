@@ -142,6 +142,14 @@ enum logging_type get_log_type(int i, char *filename) {
   }
 }
 
+/* 
+ * helper function for exit with a log msg
+ */
+void die_with_error(const char *msg) {
+  log_error(msg);
+  exit_by_type(PROCESS_EXIT);
+}
+
 void get_logging_properties(int argc, char *argv[]) {
   debug_type = NONE;
   info_type = WRITE_TO_STDOUT;
@@ -155,21 +163,21 @@ void get_logging_properties(int argc, char *argv[]) {
         i++;
         debug_type = get_log_type(atoi(argv[i]), argv[0]);
       } else {
-        printf("please provide a logging level for DEBUG for help use -h");
+        die_with_error("please provide a logging level for DEBUG for help use -h");
       }
     } else if (strcmp(argv[i], "-i") == 0)  {
       if (i + 2 <= argc )  {
         i++;
         info_type = get_log_type(atoi(argv[i]), argv[0]);
       } else {
-        printf("please provide a logging level for INFO for help use -h");
+        die_with_error("please provide a logging level for INFO for help use -h");
       }
     } else if (strcmp(argv[i], "-e") == 0)  {
       if (i + 2 <= argc )  {
         i++;
         error_type = get_log_type(atoi(argv[i]), argv[0]);
       } else {
-        printf("please provide a logging level for ERROR for help use -h");
+        die_with_error("please provide a logging level for ERROR for help use -h");
       }
     } 
   }
@@ -348,8 +356,8 @@ char *get_port_help(char **usage_text) {
   return help_text;
 }
 
-unsigned short get_port_with_default(int argc, char *argv[], unsigned short default_port) {
-  int to_return = default_port;
+unsigned short get_port_with_default(int argc, char *argv[]) {
+  int to_return = 7000;
 
   int i;
   for (i = 1; i < argc; i++)  {
@@ -358,7 +366,34 @@ unsigned short get_port_with_default(int argc, char *argv[], unsigned short defa
         i++;
         to_return = atoi(argv[i]);  
       } else {
-        printf("please provide a port if you're using -p");
+        die_with_error("please provide a port if you're using -a");
+      }
+    } 
+  }
+  return to_return;
+}
+
+char *get_ip_help(char **usage_text) {
+  *usage_text=join_with_seperator(*usage_text, "[-a IP]", " ");
+
+  char *help_text = join_with_seperator( 
+      "[-a IP] Optional: Tries to connect to the server on the given IP.",
+      "         Default: 127.0.0.1\n", "\n");
+
+  return help_text;
+}
+
+char *get_ip_with_default(int argc, char *argv[]) {
+  char *to_return = "127.0.0.1";
+
+  int i;
+  for (i = 1; i < argc; i++)  {
+    if (strcmp(argv[i], "-a") == 0)  {
+      if (i + 2 <= argc )  {
+        i++;
+        to_return = argv[i];  
+      } else {
+        die_with_error("please provide a IP if you're using -a");
       }
     } 
   }

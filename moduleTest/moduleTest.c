@@ -488,7 +488,8 @@ void usage(const char *argv0, const char *msg) {
   }
   printf("Usage:\n");
 
-  char *usage = "<Server IP>";
+  char *usage = "";
+  char *ip_help = get_ip_help(&usage);
   char *port_help = get_port_help(&usage);
   char *log_help = get_logging_help(&usage);
   printf("%s %s\n\n", argv0, usage);
@@ -496,7 +497,7 @@ void usage(const char *argv0, const char *msg) {
   printf("Executes various tests on the fileserver\n");
   printf("A running server at the given address is needed\n\n\n");
 
-  printf("<Server IP> Mandatory: Tries to connect to a server with the given IP\n\n");
+  printf("%s\n", ip_help);
   printf("%s\n", port_help);
   printf("%s\n\n", log_help);
 
@@ -511,24 +512,8 @@ int main(int argc, char *argv[]) {
     usage(argv[0], "Help:");
   }
 
-  if (argc < 2 ) {  
-    usage(argv[0], "wrong number of arguments please provide an IP at least");
-  }
-
-  server_port = 7000;  
-  server_ip = argv[1];             
-
-  int i;
-  for (i = 2; i < argc; i++)  {
-    if (strcmp(argv[i], "-p") == 0)  {
-      if (i + 2 <= argc )  {
-        i++;
-        server_port = atoi(argv[i]);  
-      } else {
-        usage(argv[0], "please provide a port if you're using -p");
-      }
-    } 
-  }
+  server_ip = get_ip_with_default(argc, argv);
+  server_port = get_port_with_default(argc, argv);
   get_logging_properties(argc, argv);
 
   num_testcases = 0;

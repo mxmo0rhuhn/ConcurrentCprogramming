@@ -31,7 +31,8 @@ void usage(const char *argv0, const char *msg) {
   if (msg != NULL && strlen(msg) > 0) {
     printf("%s\n\n", msg);
   }
-  char *usage = "<Server IP> [-c Line1] [-C Line2]";
+  char *usage = "[-c Line1] [-C Line2]";
+  char *ip_help = get_ip_help(&usage);
   char *port_help = get_port_help(&usage);
   char *log_help = get_logging_help(&usage);
   printf("Usage:\n");
@@ -47,11 +48,11 @@ void usage(const char *argv0, const char *msg) {
   printf("If you want to specify a second line that is send to the server after\n");
   printf("-c you can use -C \n\n\n");
 
-  printf("<Server IP> Mandatory: Tries to connect to a server with the given IP\n\n");
   printf("[-c Line1] Optional: A command that should be send to the server.\n");
   printf("                     This option disables the interactive mode\n\n");
   printf("[-C Line2] Optional: A second line for the command - only possible\n");
   printf("                     if a first line is provided\n\n");
+  printf("%s\n", ip_help);
   printf("%s\n", port_help);
   printf("%s\n\n", log_help);
 
@@ -66,14 +67,11 @@ int main(int argc, char *argv[]) {
     usage(argv[0], "Help:");
   }
 
-  if (argc < 2 ) {  
-    usage(argv[0], "wrong number of arguments please provide an IP at least");
-  }
-
-  char *server_ip = argv[1];             
-  int sock;                        
-  unsigned short server_port = get_port_with_default(argc, argv, 7000);
+  char *server_ip = get_ip_with_default(argc, argv);
+  unsigned short server_port = get_port_with_default(argc, argv);
   get_logging_properties(argc, argv);
+
+  int sock;                        
   int interactive = TRUE; 
   int firstRun = TRUE;
   char *cmd;

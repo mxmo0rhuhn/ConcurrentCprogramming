@@ -2,4 +2,5 @@
 make clean
 make ragel
 make all
-./run -p 7000 -d 1
+rm -rf run.log
+./run -d 1

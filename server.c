@@ -187,10 +187,6 @@ int main ( int argc, char *argv[] ) {
     usage(programName, "Help: ");
   }
 
-  if (argc < 2) {
-    log_info("found %d arguments", argc - 1);
-    usage(programName, "wrong number of arguments");
-  }
   get_logging_properties(argc, argv);
 
   // Creation of the file list
@@ -202,7 +198,7 @@ int main ( int argc, char *argv[] ) {
   pthread_t socketListenerThread;
 
   ListenerPayload socketListenerPayload;
-  socketListenerPayload.port_number = get_port_with_default(argc, argv, 7000);
+  socketListenerPayload.port_number = get_port_with_default(argc, argv);
   socketListenerPayload.threadList = threadList;
   socketListenerPayload.file_list = file_list;
 
