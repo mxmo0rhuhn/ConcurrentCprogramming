@@ -24,16 +24,39 @@
 #include <stdlib.h>     
 #include <string.h>     
 #include <unistd.h>     
+#include <pthread.h>
 
 #include <termPaperLib.h>
 
+// max 9999 testcases
+#define MAX_TESTNUM 4
+typedef struct payload {
+  pthread_barrier_t *start;
+  pthread_barrier_t *target;
+  int num;
+} Payload;
+
+void handle_barrier_wait_error(int retcode, char *desc) {
+  if (retcode != 0 && retcode != PTHREAD_BARRIER_SERIAL_THREAD){
+    printf("Tried: %s, got error %d\n", desc, retcode);
+    exit(1);
+  }
+}
+
+// Global stuff - it is only a test ...
 char *server_ip;
 unsigned short server_port;
 int num_testcases;
 int num_testcases_success;
 int num_testcases_fail;
 
-int runConcurrentTestcase(const char *input, const char *expected) {
+pthread_mutex_t concurrent_stat_lock;
+int num_concurrent_testcases;
+int num_concurrent_testcases_success;
+int num_concurrent_testcases_fail;
+
+int run_concurrent_testcase(const char *input, const char *expected, char* desc) {
+  int to_return = 0;
   int sock = create_client_socket(server_port, server_ip);
 
   write_to_socket(sock, input);
@@ -45,22 +68,61 @@ int runConcurrentTestcase(const char *input, const char *expected) {
   int result = strcmp(*buffer_ptr, expected);
 
   if(result == 0) {
-    log_info("Testcase %zu: OK!", num_testcases);
+    log_info("Testcase %s: OK!", desc);
   } else {
-    log_info("Testcase %zu: FAILED!", num_testcases);
-    log_debug("send: '%s'", input);
-    log_debug("Expected: '%s'", expected);
-    log_debug("Recived : '%s'", *buffer_ptr);
+    log_info("Testcase %s: FAILED!", desc);
+    log_info("send: '%s'", input);
+    log_info("Expected: '%s'", expected);
+    log_info("Recived : '%s'", *buffer_ptr);
+    to_return++;
   }
 
   free(*buffer_ptr);
   close(sock);
+
+  return to_return;
 }
+
+void run_concurrent_roundtrip_test(char* filename, size_t length, char *content, size_t length_update, char *update) {
+
+  // LIST Tests are not (easy) possible since we don't know wich order the tests arrive
+  int fail_no = 0;
+  int no = 5;
+
+  char request[MAX_MSG_LEN + 100];
+  char response[MAX_MSG_LEN + 100];
+  sprintf(request,"CREATE %s %zu\n%s\n", filename, length, content);
+  fail_no += run_concurrent_testcase(request, "FILECREATED\n", filename );
+
+  sprintf(request,"READ %s\n", filename);
+  sprintf(response,"FILECONTENT %s %zu\n%s\n", filename, length, content);
+  fail_no += run_concurrent_testcase(request, response, filename);
+
+  sprintf(request,"UPDATE %s %zu\n%s\n", filename, length_update, update);
+  fail_no += run_concurrent_testcase(request, "UPDATED\n", filename);
+
+  sprintf(request,"READ %s\n", filename);
+  sprintf(response,"FILECONTENT %s %zu\n%s\n", filename, length_update, update);
+  fail_no += run_concurrent_testcase(request, response, filename);
+
+  sprintf(request,"DELETE %s\n", filename);
+  fail_no += run_concurrent_testcase(request, "DELETED\n", filename);
+
+  pthread_mutex_lock(&concurrent_stat_lock);
+  num_concurrent_testcases_fail += fail_no;
+  num_concurrent_testcases_success +=(no - fail_no);
+  num_concurrent_testcases += no;
+  pthread_mutex_unlock(&concurrent_stat_lock);
+}
+
 
 void runTestcase(const char *input, const char *expected) {
   num_testcases++;
 
-  if(runConcurrentTestcase(input, expected) == 0) {
+  char testcase_char[MAX_TESTNUM];
+  snprintf(testcase_char, MAX_TESTNUM, "%03d", num_testcases);
+
+  if(run_concurrent_testcase(input, expected, testcase_char) == 0 ) {
     num_testcases_success++;  
   } else {
     num_testcases_fail++;  
@@ -92,7 +154,7 @@ void runFilencontentSizeTestFail(size_t in) {
   runTestcase("READ blub\n","NOSUCHFILE\n");
 
   runTestcase("LIST\n", "ACK 0\n");
-  
+
   sprintf(real_long_string,"UPDATE blub %zu\n%s\n", in, bad_string);
   runTestcase(real_long_string, "CONTENT_TO_LONG\n");
 }
@@ -109,7 +171,7 @@ void runFilenameSizeTestFail(size_t in) {
   runTestcase(real_long_string, "FILENAME_TO_LONG\n");
 
   runTestcase("LIST\n", "ACK 0\n");
-  
+
   sprintf(real_long_string,"UPDATE %s %zu\n%s\n", bad_string, in, bad_string);
   runTestcase(real_long_string, "FILENAME_TO_LONG\n");
 }
@@ -128,7 +190,7 @@ void runExtremeLenTestsFail(size_t in) {
   runTestcase(real_long_string, "FILENAME_TO_LONG\n");
 
   runTestcase("LIST\n", "ACK 0\n");
-  
+
   sprintf(real_long_string,"UPDATE %s %zu\n%s\n", name_string, in, bad_string);
   runTestcase(real_long_string, "FILENAME_TO_LONG\n");
 }
@@ -177,7 +239,7 @@ void runLenTest(size_t filename_len, size_t content_len) {
 void runTestcases() {
   char *bad_string ;
 
-// garbage 
+  // garbage 
   log_debug("---------------------------------------------------");
   log_debug("garbage as input");
 
@@ -191,11 +253,11 @@ void runTestcases() {
   runTestcase(bad_string, "COMMAND_UNKNOWN\n");
   free(bad_string);
 
-// test the instructor:
-// Do you read this?
+  // test the instructor:
+  // Do you read this?
   runTestcase("Cdist\n", "FTW ;-)\n");
 
-// filename with spaces 
+  // filename with spaces 
   log_debug("---------------------------------------------------");
   log_debug("filenames with spaces");
   runTestcase("CREATE im possible 3\n123\n", "COMMAND_UNKNOWN\n");
@@ -203,7 +265,7 @@ void runTestcases() {
   runTestcase("DELETE im possible 3\n123\n", "COMMAND_UNKNOWN\n");
   runTestcase("READ im possible 3\n123\n", "COMMAND_UNKNOWN\n");
 
-// filename with special characters
+  // filename with special characters
   log_debug("---------------------------------------------------");
   log_debug("filename with special characters");
   runRoundtripTest("file1", 3, "bnm", 5, "blube");
@@ -212,7 +274,7 @@ void runTestcases() {
   runRoundtripTest("file_", 3, "bnm", 5, "blube");
   runRoundtripTest("file-", 3, "bnm", 5, "blube");
 
-//content with spaces 
+  //content with spaces 
   log_debug("---------------------------------------------------");
   log_debug("content with spaces");
   runRoundtripTest("file", 3, "i i", 5, "i   i");
@@ -220,14 +282,14 @@ void runTestcases() {
   runRoundtripTest("file", 3, "i i", 5, "i    ");
   runRoundtripTest("file", 3, "i i", 5, "     ");
 
-//content with spaces 
+  //content with spaces 
   log_debug("---------------------------------------------------");
   log_debug("content special characters");
   runRoundtripTest("file", 3, "123", 5, "12345");
   runRoundtripTest("file", 3, "!ab", 5, "cdis!");
   runRoundtripTest("file", 3, "dj$", 5, "bf$ss");
 
-// messing arround with the lens
+  // messing arround with the lens
   log_debug("---------------------------------------------------");
   log_debug("runFilenameSizeTest");
   runLenTest((MAX_BUFLEN - 1), 33);
@@ -341,7 +403,7 @@ void runTestcases() {
   runTestcase("READ hack1\n", "FILECONTENT hack1 1\na\n");
   runTestcase("READ hack2\n", "FILECONTENT hack2 1\n1\n");
 
-// UPDATE TESTS
+  // UPDATE TESTS
   runTestcase("UPDATE hack1 0\nasdfgh\n", "COMMAND_UNKNOWN\n");
   runTestcase("READ hack1\n", "FILECONTENT hack1 1\na\n");
   runTestcase("UPDATE hack1 1\nzzzzzzzz\n", "UPDATED\n");
@@ -366,6 +428,58 @@ void runTestcases() {
   runTestcase("LIST\n", "ACK 1\nhack2\n");
   runTestcase("DELETE hack2\n", "DELETED\n");
   runTestcase("LIST\n", "ACK 0\n");
+}
+void *run(void *input) {
+
+  pthread_detach(pthread_self());
+  char filename[9];
+  Payload *payload = ( Payload* ) input;
+
+  int retcode;
+  unsigned char c;
+
+  log_debug("%3d Starting to wait.", payload->num);
+  retcode = pthread_barrier_wait((payload->start));
+  handle_barrier_wait_error(retcode, "Wait barrier");
+
+  // num should be < 1'000
+  snprintf(filename, 9, "file%03d", payload->num);
+  run_concurrent_roundtrip_test(filename, 5 , "abcde", 7, "zyxwvut");
+
+  retcode = pthread_barrier_wait((payload->target));
+  free(payload);
+  pthread_exit(NULL);
+}
+void runConcurrentTestcases(size_t num) {
+  pthread_t threads[num];
+  pthread_barrier_t start;
+  pthread_barrier_t target;
+
+  int retcode = pthread_barrier_init(&start, NULL, num);
+  handle_thread_error(retcode, "Create barrier", PROCESS_EXIT);
+
+  retcode = pthread_barrier_init(&target, NULL, num);
+  handle_thread_error(retcode, "Create barrier", PROCESS_EXIT);
+
+  int i; 
+  for (i = 0; i < num ; i++) {
+
+    Payload *payload = malloc(sizeof(Payload));
+    payload->start = &start;
+    payload->target = &target;
+    payload->num = i;
+    retcode = pthread_create(&threads[i] , NULL, run, payload);
+    handle_thread_error(retcode, "Create Thread", PROCESS_EXIT);
+  }
+
+  log_debug("Starting to wait");
+  retcode = pthread_barrier_wait(&start);
+  handle_barrier_wait_error(retcode, "Wait barrier");
+
+  log_debug("Starting to wait");
+  retcode = pthread_barrier_wait(&target);
+  handle_barrier_wait_error(retcode, "Wait barrier");
+  log_info("Wait finished ");
 }
 
 void usage(const char *argv0, const char *msg) {
@@ -420,11 +534,23 @@ int main(int argc, char *argv[]) {
   num_testcases = 0;
   num_testcases_success = 0;
   num_testcases_fail = 0;
+  num_concurrent_testcases = 0;
+  num_concurrent_testcases_success = 0;
+  num_concurrent_testcases_fail = 0;
+  pthread_mutex_t mutex = PTHREAD_MUTEX_INITIALIZER;
+  concurrent_stat_lock = mutex;
 
+  runConcurrentTestcases(20);
   runTestcases();
 
+  int ret = pthread_mutex_destroy(&concurrent_stat_lock);
+  handle_error(ret, "destroy mutex failed", PROCESS_EXIT);
+
   log_info("Testsuite done!");
-  log_info("Ran %d Tests", num_testcases);
-  log_info("%d Tests succeded", num_testcases_success);
-  log_info("%d Tests failed", num_testcases_fail);
+  log_info("Ran %d testcases", num_testcases);
+  log_info("%d tests succeded", num_testcases_success);
+  log_info("%d tests failed", num_testcases_fail);
+  log_info("Ran %d concurrent testcases", num_concurrent_testcases);
+  log_info("%d concurrent tests succeded", num_concurrent_testcases_success);
+  log_info("%d concurrent tests failed", num_concurrent_testcases_fail);
 }
