@@ -741,8 +741,8 @@ int main(int argc, char *argv[]) {
   pthread_mutex_t mutex = PTHREAD_MUTEX_INITIALIZER;
   concurrent_stat_lock = mutex;
 
-  runConcurrentTestcases(200);
-  runConcurrencyTest(20);
+  runConcurrentTestcases(999);
+  runConcurrencyTest(200);
   runTestcases();
 
   retcode = pthread_mutex_destroy(&concurrent_stat_lock);
