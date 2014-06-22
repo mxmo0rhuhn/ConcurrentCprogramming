@@ -36,6 +36,17 @@ typedef struct payload {
   int num;
 } Payload;
 
+typedef struct payload2 {
+  pthread_barrier_t *create_barr;
+  pthread_mutex_t create_mutex;
+  int num_create;
+  pthread_barrier_t *update_barr;
+  pthread_barrier_t *delete_barr;
+  pthread_mutex_t delete_mutex;
+  int num_delete;
+  pthread_barrier_t *target_barr;
+} Payload2;
+
 void handle_barrier_wait_error(int retcode, char *desc) {
   if (retcode != 0 && retcode != PTHREAD_BARRIER_SERIAL_THREAD){
     printf("Tried: %s, got error %d\n", desc, retcode);
@@ -54,6 +65,42 @@ pthread_mutex_t concurrent_stat_lock;
 int num_concurrent_testcases;
 int num_concurrent_testcases_success;
 int num_concurrent_testcases_fail;
+
+// poss1 = 0
+// poss2 = 1
+// neither = 2
+int run_not_sure_testcase(const char *input, const char *poss1, const char *poss2, char* desc) {
+  int to_return = 0;
+  int sock = create_client_socket(server_port, server_ip);
+
+  write_to_socket(sock, input);
+
+  char *buffer_ptr[0];
+
+  size_t received_msg_size = read_from_socket(sock, buffer_ptr);
+
+  int result = strcmp(*buffer_ptr, poss1);
+
+  if(result == 0) {
+    log_info("Testcase %s: OK!", desc);
+  } else {
+    result = strcmp(*buffer_ptr, poss2);
+    if(result == 0) {
+      to_return = 1;
+    } else {
+      log_info("Testcase %s: FAILED!", desc);
+      log_info("send: '%s'", input);
+      log_info("Expected: '%s' or '%s'", poss1, poss2);
+      log_info("Recived : '%s'", *buffer_ptr);
+      to_return = 2;
+    }
+  }
+
+  free(*buffer_ptr);
+  close(sock);
+
+  return to_return;
+}
 
 int run_concurrent_testcase(const char *input, const char *expected, char* desc) {
   int to_return = 0;
@@ -83,6 +130,92 @@ int run_concurrent_testcase(const char *input, const char *expected, char* desc)
   return to_return;
 }
 
+void *run_concurrent_test(void *input) {
+
+  pthread_detach(pthread_self());
+  Payload2 *payload = ( Payload2* ) input;
+
+  int fail_no = 0;
+  int no = 0;
+  int res = 0;
+
+  char *filename = "concurrentTest";
+  size_t length = 14;
+  char *content = "concurrentTest";
+  size_t length_update = 5;
+  char *update = "ghjkl";
+
+  char request[MAX_MSG_LEN + 100];
+  char response[MAX_MSG_LEN + 100];
+
+  int retcode = pthread_barrier_wait((payload->create_barr));
+  handle_barrier_wait_error(retcode, "Wait CREATE barrier");
+  sprintf(request,"CREATE %s %zu\n%s\n", filename, length, content);
+  no++;
+  res = run_not_sure_testcase(request , "FILEEXISTS\n", "FILECREATED\n", "concurrent create" );
+  if(res > 1) {
+    fail_no++;
+  } 
+
+  sprintf(response,"ACK 1\n%s\n", filename);
+  no++;
+  fail_no += run_concurrent_testcase("LIST\n", response, "concurrent LIST - create");
+
+  sprintf(request,"READ %s\n", filename);
+  sprintf(response,"FILECONTENT %s %zu\n%s\n", filename, length, content);
+  no++;
+  fail_no += run_concurrent_testcase(request, response, filename);
+
+  retcode = pthread_mutex_lock(&(payload->create_mutex));
+  handle_thread_error(retcode, "lock CREATE mutex", THREAD_EXIT);
+  payload->num_create += res;
+  retcode = pthread_mutex_unlock(&(payload->create_mutex));
+  handle_thread_error(retcode, "unlock CREATE mutex", THREAD_EXIT);
+
+  retcode = pthread_barrier_wait((payload->update_barr));
+  handle_barrier_wait_error(retcode, "Wait UPDATE barrier");
+  sprintf(request,"UPDATE %s %zu\n%s\n", filename, length_update, update);
+  fail_no += run_concurrent_testcase(request, "UPDATED\n", filename);
+
+  sprintf(request,"READ %s\n", filename);
+  sprintf(response,"FILECONTENT %s %zu\n%s\n", filename, length_update, update);
+  fail_no += run_concurrent_testcase(request, response, filename);
+
+  sprintf(response,"ACK 1\n%s\n", filename);
+  fail_no += run_concurrent_testcase("LIST\n", response, "concurrent LIST - update");
+
+  retcode = pthread_barrier_wait((payload->delete_barr));
+  handle_barrier_wait_error(retcode, "Wait DELETE barrier");
+
+  sprintf(request,"DELETE %s\n", filename);
+  no++;
+  res = run_not_sure_testcase(request , "NOSUCHFILE\n", "DELETED\n", "concurrent delete" );
+  if(res > 1) {
+    fail_no++;
+  } 
+
+  retcode = pthread_mutex_lock(&(payload->delete_mutex));
+  handle_thread_error(retcode, "lock DELETE mutex", THREAD_EXIT);
+  payload->num_delete += res;
+  retcode = pthread_mutex_unlock(&(payload->delete_mutex));
+  handle_thread_error(retcode, "unlock DELETE mutex", THREAD_EXIT);
+
+  fail_no += run_concurrent_testcase("LIST\n", "ACK 0\n", "concurrent LIST - done");
+
+  retcode = pthread_mutex_lock(&concurrent_stat_lock);
+  handle_thread_error(retcode, "lock stat mutex", THREAD_EXIT);
+  num_concurrent_testcases_fail += fail_no;
+  num_concurrent_testcases_success +=(no - fail_no);
+  num_concurrent_testcases += no;
+  retcode = pthread_mutex_unlock(&concurrent_stat_lock);
+  handle_thread_error(retcode, "unlock emement mutex", THREAD_EXIT);
+
+  retcode = pthread_barrier_wait((payload->target_barr));
+  handle_barrier_wait_error(retcode, "Wait TARGET barrier");
+
+  pthread_exit(NULL);
+}
+
 void run_concurrent_roundtrip_test(char* filename, size_t length, char *content, size_t length_update, char *update) {
 
   // LIST Tests are not (easy) possible since we don't know wich order the tests arrive
@@ -108,13 +241,14 @@ void run_concurrent_roundtrip_test(char* filename, size_t length, char *content,
   sprintf(request,"DELETE %s\n", filename);
   fail_no += run_concurrent_testcase(request, "DELETED\n", filename);
 
-  pthread_mutex_lock(&concurrent_stat_lock);
+  int retcode = pthread_mutex_lock(&concurrent_stat_lock);
+  handle_thread_error(retcode, "lock stat mutex", THREAD_EXIT);
   num_concurrent_testcases_fail += fail_no;
   num_concurrent_testcases_success +=(no - fail_no);
   num_concurrent_testcases += no;
-  pthread_mutex_unlock(&concurrent_stat_lock);
+  retcode = pthread_mutex_unlock(&concurrent_stat_lock);
+  handle_thread_error(retcode, "unlock stat mutex", THREAD_EXIT);
 }
-
 
 void runTestcase(const char *input, const char *expected) {
   num_testcases++;
@@ -440,26 +574,103 @@ void *run(void *input) {
 
   log_debug("%3d Starting to wait.", payload->num);
   retcode = pthread_barrier_wait((payload->start));
-  handle_barrier_wait_error(retcode, "Wait barrier");
+  handle_barrier_wait_error(retcode, "Wait START barrier");
 
   // num should be < 1'000
   snprintf(filename, 9, "file%03d", payload->num);
   run_concurrent_roundtrip_test(filename, 5 , "abcde", 7, "zyxwvut");
 
   retcode = pthread_barrier_wait((payload->target));
+  handle_barrier_wait_error(retcode, "Wait TARGET barrier");
   free(payload);
   pthread_exit(NULL);
 }
+void runConcurrencyTest(size_t num) {
+  pthread_t threads[num];
+  pthread_barrier_t create_barr;
+  pthread_barrier_t update_barr;
+  pthread_barrier_t delete_barr;
+  pthread_barrier_t target_barr;
+  pthread_mutex_t create_mutex = PTHREAD_MUTEX_INITIALIZER;
+  pthread_mutex_t delete_mutex = PTHREAD_MUTEX_INITIALIZER;
+
+  int retcode = pthread_barrier_init(&create_barr, NULL, num);
+  handle_thread_error(retcode, "Create CREATE barrier", PROCESS_EXIT);
+
+  retcode = pthread_barrier_init(&update_barr, NULL, num);
+  handle_thread_error(retcode, "Create UPDATE barrier", PROCESS_EXIT);
+
+  retcode = pthread_barrier_init(&delete_barr, NULL, num);
+  handle_thread_error(retcode, "Create DELETE barrier", PROCESS_EXIT);
+
+  retcode = pthread_barrier_init(&target_barr, NULL, num);
+  handle_thread_error(retcode, "Create TARGET barrier", PROCESS_EXIT);
+
+  Payload2 *payload = malloc(sizeof(Payload2));
+  payload->create_barr = &create_barr;
+  payload->update_barr = &update_barr;
+  payload->delete_barr = &delete_barr;
+  payload->target_barr = &target_barr;
+  payload->create_mutex = create_mutex;
+  payload->delete_mutex = delete_mutex;
+  payload->num_create = 0;
+  payload->num_delete = 0;
+
+  int i; 
+  for (i = 0; i < num ; i++) {
+
+    retcode = pthread_create(&threads[i] , NULL, run_concurrent_test, payload);
+    handle_thread_error(retcode, "Create Thread", PROCESS_EXIT);
+  }
+
+  retcode = pthread_barrier_wait(&create_barr);
+  handle_barrier_wait_error(retcode, "Wait CREATE barrier");
+
+  retcode = pthread_barrier_wait(&update_barr);
+  handle_barrier_wait_error(retcode, "Wait UPDATE barrier");
+
+  retcode = pthread_barrier_wait(&delete_barr);
+  handle_barrier_wait_error(retcode, "Wait DELETE barrier");
+
+  retcode = pthread_barrier_wait(&target_barr);
+  handle_barrier_wait_error(retcode, "Wait TARGET barrier");
+
+  if (payload->num_create > 1) {
+    log_info("concurrent test failed - CREATE");
+    num_concurrent_testcases_fail += num;
+  }
+
+  if (payload->num_delete > 1) {
+    log_info("concurrent test failed - DELETE");
+    num_concurrent_testcases_fail += num;
+  }
+  retcode = pthread_barrier_destroy(&create_barr);
+//  handle_thread_error(retcode, "Destroy CREATE barrier", PROCESS_EXIT);
+  retcode = pthread_barrier_destroy(&update_barr);
+//  handle_thread_error(retcode, "Destroy UPDATE barrier", PROCESS_EXIT);
+  retcode = pthread_barrier_destroy(&delete_barr);
+//  handle_thread_error(retcode, "Destroy DELETE barrier", PROCESS_EXIT);
+  retcode = pthread_barrier_destroy(&target_barr);
+//  handle_thread_error(retcode, "Destroy TARGET barrier", PROCESS_EXIT);
+
+  retcode = pthread_mutex_destroy(&delete_mutex);
+  handle_error(retcode, "destroy create mutex failed", PROCESS_EXIT);
+  retcode = pthread_mutex_destroy(&create_mutex);
+  handle_error(retcode, "destroy delete mutex failed", PROCESS_EXIT);
+
+  log_info("Wait finished ");
+}
+
 void runConcurrentTestcases(size_t num) {
   pthread_t threads[num];
   pthread_barrier_t start;
   pthread_barrier_t target;
 
   int retcode = pthread_barrier_init(&start, NULL, num);
-  handle_thread_error(retcode, "Create barrier", PROCESS_EXIT);
+  handle_thread_error(retcode, "Create START barrier", PROCESS_EXIT);
 
   retcode = pthread_barrier_init(&target, NULL, num);
-  handle_thread_error(retcode, "Create barrier", PROCESS_EXIT);
+  handle_thread_error(retcode, "Create TARGET barrier", PROCESS_EXIT);
 
   int i; 
   for (i = 0; i < num ; i++) {
@@ -474,12 +685,17 @@ void runConcurrentTestcases(size_t num) {
 
   log_debug("Starting to wait");
   retcode = pthread_barrier_wait(&start);
-  handle_barrier_wait_error(retcode, "Wait barrier");
+  handle_barrier_wait_error(retcode, "Wait START barrier");
 
   log_debug("Starting to wait");
   retcode = pthread_barrier_wait(&target);
-  handle_barrier_wait_error(retcode, "Wait barrier");
+  handle_barrier_wait_error(retcode, "Wait TARGET barrier");
   log_info("Wait finished ");
+
+  retcode = pthread_barrier_destroy(&start);
+//  handle_thread_error(retcode, "Destroy START barrier", PROCESS_EXIT);
+  retcode = pthread_barrier_destroy(&target);
+//  handle_thread_error(retcode, "Destroy TARGET barrier", PROCESS_EXIT);
 }
 
 void usage(const char *argv0, const char *msg) {
@@ -525,11 +741,12 @@ int main(int argc, char *argv[]) {
   pthread_mutex_t mutex = PTHREAD_MUTEX_INITIALIZER;
   concurrent_stat_lock = mutex;
 
-  runConcurrentTestcases(20);
+  runConcurrentTestcases(200);
+  runConcurrencyTest(20);
   runTestcases();
 
-  int ret = pthread_mutex_destroy(&concurrent_stat_lock);
-  handle_error(ret, "destroy mutex failed", PROCESS_EXIT);
+  retcode = pthread_mutex_destroy(&concurrent_stat_lock);
+  handle_error(retcode, "destroy mutex failed", PROCESS_EXIT);
 
   log_info("Testsuite done!");
   log_info("Ran %d testcases", num_testcases);
