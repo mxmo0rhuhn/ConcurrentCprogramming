@@ -90,7 +90,7 @@ ConcurrentListElement *removeElement(ConcurrentListElement *element) {
 
   log_debug("Remove payload: %p", element->payload);
   free(element->payload);
-  log_debug("Remove ID: %p", element->ID);
+  log_debug("     Remove ID: %p", element->ID);
   free(element->ID);
   log_debug("Remove element: %p", element);
   free(element);
@@ -102,12 +102,14 @@ ConcurrentListElement *createElement(void **payload, size_t payload_size, char *
     new->payload = malloc(payload_size);
     memcpy(new->payload, *payload, payload_size);
 
-    log_debug("Append payload: %p", *payload);
-    log_debug("Append element: %p", new);
+    log_debug("        Append payload: %p", *payload);
+    log_debug("        Append element: %p", new);
     log_debug("Append element payload: %p", new->payload);
 
     pthread_mutex_t mutex = PTHREAD_MUTEX_INITIALIZER;
+    pthread_mutex_t content_mutex = PTHREAD_MUTEX_INITIALIZER;
     new->usageMutex = mutex; 
+    new->content_mutex = content_mutex;
     new->nextEntry = NULL;
 
     // strlen + \000
@@ -188,7 +190,7 @@ size_t getFirstListElement(ConcurrentLinkedList *list, void **payload) {
 
     log_debug("Original payload: %p", first->payload);
     log_debug("  Return payload: %p", *payload);
-    log_debug("Payload size: %d", payload_size);
+    log_debug("    Payload size: %d", payload_size);
 
     memcpy(*payload, first->payload, payload_size);
     returnElement(first);

@@ -79,7 +79,6 @@ void *handleRequest(void *input) {
 
   char *buffer_ptr[0];
 
-  log_debug("handleRequest recv payload->socket = %d",payload->socket);
   // Receive command from client 
   size_t received_msg_size = read_from_socket(payload->socket, buffer_ptr);
   log_debug("Thread %ld: Recived: '%s'", threadID, *buffer_ptr);
@@ -90,7 +89,6 @@ void *handleRequest(void *input) {
   write_to_socket(payload->socket, return_msg);
 
   // Close client socket 
-  log_debug("handleRequest close payload->socket = %d",payload->socket);
   close(payload->socket);    
   free(*buffer_ptr);
 
@@ -101,7 +99,7 @@ void *handleRequest(void *input) {
 
 void *createSocketListener(void *input) {
   long threadID =(long) pthread_self();
-  log_info("Thread %ld: Hello from Socket Listener", threadID );  
+  log_info("Thread %ld: Hello from LISTENER", threadID );  
 
   ListenerPayload *listenerPayload = (ListenerPayload *) input;
   Payload *nextListEntry = malloc(sizeof(Payload));
@@ -112,20 +110,20 @@ void *createSocketListener(void *input) {
 
   // Run forever 
   while (TRUE) { 
-    log_debug("Accept - Payload: %p", nextListEntry);
+    log_debug("LISTENER: Accept - payload: %p", nextListEntry);
     nextListEntry->thread = malloc(sizeof(pthread_t));
-    log_debug("allocated thread: %p", nextListEntry->thread);
+    log_debug("LISTENER: Allocated thread: %p", nextListEntry->thread);
 
     nextListEntry->file_list = listenerPayload->file_list;
 
     // Wait for a client to connect 
-    log_info("Socket Listener: Accepting new connections");
+    log_info("LISTENER: Accepting new connections");
     nextListEntry->socket = accept(server_socket , (struct sockaddr *)&(nextListEntry->client_address) 
         , &(client_address_len));
     handle_error(nextListEntry->socket, "accept() failed", PROCESS_EXIT);
 
-    log_info("Socket Listener: New connection accepted");
-    log_debug("accept nextListEntry->Socket = %d",nextListEntry->socket);
+    log_info("LISTENER: New connection accepted");
+    log_debug("LISTENER: Accept nextListEntry->Socket = %d",nextListEntry->socket);
 
     int retcode = pthread_create(nextListEntry->thread , NULL, handleRequest, nextListEntry);
     handle_thread_error(retcode, "Create Thread", PROCESS_EXIT);
@@ -135,48 +133,46 @@ void *createSocketListener(void *input) {
   }
   close(server_socket);
   // Should never happen!
-  log_error("Thread %ld: Bye Bye from Socket Listener - ERROR!", threadID );  
+  log_error("Thread %ld: Bye Bye from LISTENER - ERROR!", threadID );  
   pthread_exit(NULL);
 }
 
 void *cleanUpSocketListener(void *input) {
   long threadID =(long) pthread_self();
-  log_info("Thread %ld: Hello from Cleanup Thread", threadID );  
+  log_info("Thread %ld: Hello from CLEANUP", threadID );  
 
   int retcode;
   ConcurrentLinkedList *threadList = (ConcurrentLinkedList *) input;
-  log_debug("ConcurrentLinkedList: %p", threadList);
+  log_debug("CLEANUP: ConcurrentLinkedList: %p", threadList);
   Payload *firstElementAsPayload; 
 
   int num = 0;
   while (TRUE) { 
     sleep(CLEANUP_FREQUENCY);
-    log_info("Cleanup Thread: Start Removing Threads");
-    log_debug("First Element Copy = %p", firstElementAsPayload);
+    log_info("CLEANUP: Start removing threads");
+    log_debug("CLEANUP: First element copy = %p", firstElementAsPayload);
 
     num = 0;
     // gives back the shallow copy of the element
     while(getFirstListElement(threadList, (void *)&firstElementAsPayload) > 1){ 
-      log_debug("Cleanup Thread: Removing Thread");
 
-      log_debug("about to join: %p", firstElementAsPayload->thread);
+      log_debug("CLEANUP: about to join: %p", firstElementAsPayload->thread);
       retcode = pthread_join(*(firstElementAsPayload->thread), NULL);
-      handle_thread_error(retcode, "Join Thread", PROCESS_EXIT);
-      log_debug("joined");
+      handle_thread_error(retcode, "Join thread", PROCESS_EXIT);
+      log_debug("CLEANUP: joined");
 
-      log_debug("remove thread: %p", firstElementAsPayload->thread);
+      log_debug("CLEANUP: remove thread: %p", firstElementAsPayload->thread);
       free(firstElementAsPayload->thread);
-      log_debug("about to remove copy: %p", firstElementAsPayload);
+      log_debug("CLEANUP: about to remove copy: %p", firstElementAsPayload);
       free(firstElementAsPayload);
 
       removeFirstListElement(threadList);
       num++;
     }
-    log_info("Cleanup Thread: Done Removing Threads");
-    log_info("Removed %d Threads", num);
+    log_info("CLEANUP: Removed %d threads", num);
   }
   // Should never happen!
-  log_error("Thread %ld: Bye Bye from Cleanup Thread - ERROR!", threadID );  
+  log_error("Thread %ld: Bye Bye from CLEANUP - ERROR!", threadID );  
   pthread_exit(NULL);
 }
 
@@ -191,7 +187,7 @@ int main ( int argc, char *argv[] ) {
 
   // Creation of the file list
   ConcurrentLinkedList *file_list = newList();
-  log_debug("server file_list: %p", file_list);
+  log_debug("MAIN: Server file_list: %p", file_list);
 
   // Creation of the active thread List
   ConcurrentLinkedList *threadList = newList();
@@ -218,6 +214,6 @@ int main ( int argc, char *argv[] ) {
   handle_thread_error(retcode, "Join Cleanup thread", PROCESS_EXIT);
 
   // something went wrong!
-  log_error("Master: Reached exit - this should never happen - ERROR");
+  log_error("MAIN: Reached exit - this should never happen - ERROR");
   exit(-1);
 }
