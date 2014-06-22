@@ -30,6 +30,7 @@ typedef struct ConcurrentListElement {
   size_t payload_size;
   void *payload;
   pthread_mutex_t usageMutex;
+  pthread_mutex_t content_mutex;
   char *ID;
   struct ConcurrentListElement *nextEntry;
 } ConcurrentListElement;

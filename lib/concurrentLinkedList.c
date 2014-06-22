@@ -43,11 +43,27 @@ void useElement(ConcurrentListElement *element) {
 }
 
 /*
+ * Indicate interrest for an elements content
+ */
+void use_element_content(ConcurrentListElement *element) {
+  int retcode = pthread_mutex_lock(&element->content_mutex);
+  handle_thread_error(retcode, "lock emement content mutex", THREAD_EXIT);
+}
+
+/*
  * Return an element 
  */
 void returnElement(ConcurrentListElement *element) {
   int retcode = pthread_mutex_unlock(&element->usageMutex);
   handle_thread_error(retcode, "unlock emement mutex", THREAD_EXIT);
+}
+
+/*
+ * Return an elements content 
+ */
+void return_element_content(ConcurrentListElement *element) {
+  int retcode = pthread_mutex_unlock(&element->content_mutex);
+  handle_thread_error(retcode, "unlock emement content mutex", THREAD_EXIT);
 }
 
 /**
@@ -79,14 +95,19 @@ void returnFirstElement(ConcurrentLinkedList *list) {
  */
 ConcurrentListElement *removeElement(ConcurrentListElement *element) {
   useElement(element);
+  use_element_content(element);
   ConcurrentListElement *next = element->nextEntry;
 
-  // is locked
+  // Clear the locks (the element can't be accessed by now)
   returnElement(element);
+  return_element_content(element);
   // Pointer and real content
 
   int ret = pthread_mutex_destroy(&(element->usageMutex));
-  handle_error(ret, "destroy mutex failed", PROCESS_EXIT);
+  handle_error(ret, "destroy element mutex failed", PROCESS_EXIT);
+
+  ret = pthread_mutex_destroy(&(element->content_mutex));
+  handle_error(ret, "destroy content mutex failed", PROCESS_EXIT);
 
   log_debug("Remove payload: %p", element->payload);
   free(element->payload);
@@ -139,7 +160,6 @@ void removeFirstListElement(ConcurrentLinkedList *list) {
 
   if(first != NULL ) {
     list->firstElement = removeElement(first);
-    first = list->firstElement;
   }
   returnFirstElement(list);
 }
@@ -183,7 +203,10 @@ size_t getFirstListElement(ConcurrentLinkedList *list, void **payload) {
   if(first != NULL) {
 
     useElement(first);
+    use_element_content(first);
     returnFirstElement(list);
+    returnElement(first);
+
     payload_size = first->payload_size;
 
     *payload = malloc(payload_size);
@@ -193,8 +216,7 @@ size_t getFirstListElement(ConcurrentLinkedList *list, void **payload) {
     log_debug("    Payload size: %d", payload_size);
 
     memcpy(*payload, first->payload, payload_size);
-    returnElement(first);
-
+    return_element_content(first);
   } else {
     returnFirstElement(list);
     payload_size = 0; 
@@ -305,10 +327,12 @@ size_t getElementByID(ConcurrentLinkedList *list, void **payload, char *ID) {
 
   if (elem != NULL) {
     useElement(elem);
+    use_element_content(elem);
+    returnElement(elem);
     payload_size = elem->payload_size;
     *payload = malloc(payload_size);
     memcpy(*payload, elem->payload, payload_size);
-    returnElement(elem);
+    return_element_content(elem);
   }
 
   if(predecessor != NULL){
@@ -383,8 +407,11 @@ size_t updateListElementByID(ConcurrentLinkedList *list, void **payload, size_t 
 
   elem = useElementByID(list, &predecessor, ID) ;
 
+  // We only need a lock on the content
   if (elem != NULL) {
     useElement(elem);
+    use_element_content(elem);
+    returnElement(elem);
   }
 
   // Return other elements asap
@@ -400,7 +427,7 @@ size_t updateListElementByID(ConcurrentLinkedList *list, void **payload, size_t 
     elem->payload = malloc(payload_size);
     memcpy(elem->payload, *payload, payload_size);
     elem->payload_size = payload_size;
-    returnElement(elem);
+    return_element_content(elem);
     return_value = 0;
   } 
 
