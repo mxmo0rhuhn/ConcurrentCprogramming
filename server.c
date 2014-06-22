@@ -35,7 +35,6 @@
 
 // all informations that are needed to handle requests
 typedef struct payload {
-  pthread_t *thread;
   int socket;
   struct sockaddr_in client_address; 
   ConcurrentLinkedList *file_list;
@@ -108,28 +107,29 @@ void *createSocketListener(void *input) {
   int server_socket = create_server_socket(listenerPayload->port_number);
   unsigned int client_address_len = sizeof(nextListEntry->client_address);
 
+  int retcode;
+  pthread_t *thread= malloc(sizeof(pthread_t));
   // Run forever 
   while (TRUE) { 
     log_debug("LISTENER: Accept - payload: %p", nextListEntry);
-    nextListEntry->thread = malloc(sizeof(pthread_t));
-    log_debug("LISTENER: Allocated thread: %p", nextListEntry->thread);
+    log_debug("LISTENER: Allocated thread: %p", thread);
 
     nextListEntry->file_list = listenerPayload->file_list;
 
     // Wait for a client to connect 
     log_info("LISTENER: Accepting new connections");
-    nextListEntry->socket = accept(server_socket , (struct sockaddr *)&(nextListEntry->client_address) 
-        , &(client_address_len));
+    nextListEntry->socket = accept(server_socket , (struct sockaddr *)&(nextListEntry->client_address) , &(client_address_len));
     handle_error(nextListEntry->socket, "accept() failed", PROCESS_EXIT);
 
     log_info("LISTENER: New connection accepted");
-    log_debug("LISTENER: Accept nextListEntry->Socket = %d",nextListEntry->socket);
 
-    int retcode = pthread_create(nextListEntry->thread , NULL, handleRequest, nextListEntry);
+    retcode = pthread_create(thread , NULL, handleRequest, nextListEntry);
     handle_thread_error(retcode, "Create Thread", PROCESS_EXIT);
 
-    appendListElement(listenerPayload->threadList,(void *) &nextListEntry, sizeof(Payload), "NoName");
+    appendListElement(listenerPayload->threadList,(void *) thread, sizeof(pthread_t), "NoName");
+    free(thread);
     nextListEntry = malloc(sizeof(Payload));
+    thread= malloc(sizeof(pthread_t));
   }
   close(server_socket);
   // Should never happen!
@@ -144,27 +144,24 @@ void *cleanUpSocketListener(void *input) {
   int retcode;
   ConcurrentLinkedList *threadList = (ConcurrentLinkedList *) input;
   log_debug("CLEANUP: ConcurrentLinkedList: %p", threadList);
-  Payload *firstElementAsPayload; 
+  pthread_t *thread; 
 
   int num = 0;
   while (TRUE) { 
     sleep(CLEANUP_FREQUENCY);
     log_info("CLEANUP: Start removing threads");
-    log_debug("CLEANUP: First element copy = %p", firstElementAsPayload);
 
     num = 0;
     // gives back the shallow copy of the element
-    while(getFirstListElement(threadList, (void *)&firstElementAsPayload) > 1){ 
+    while(getFirstListElement(threadList, (void *)&thread) > 0){ 
 
-      log_debug("CLEANUP: about to join: %p", firstElementAsPayload->thread);
-      retcode = pthread_join(*(firstElementAsPayload->thread), NULL);
+      log_debug("CLEANUP: about to join: %p", thread);
+      retcode = pthread_join(*thread, NULL);
       handle_thread_error(retcode, "Join thread", PROCESS_EXIT);
       log_debug("CLEANUP: joined");
 
-      log_debug("CLEANUP: remove thread: %p", firstElementAsPayload->thread);
-      free(firstElementAsPayload->thread);
-      log_debug("CLEANUP: about to remove copy: %p", firstElementAsPayload);
-      free(firstElementAsPayload);
+      log_debug("CLEANUP: remove thread: %p", thread);
+      free(thread);
 
       removeFirstListElement(threadList);
       num++;
